@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* select none */
+* {
+	user-select: none;
+	/* no vertical scroll with overflow */
+}
+
+.tab-content {
+	display: none;
+}
+
+.tab-content.active {
+	display: block;
+}
+
+/* Custom scrollbar for Webkit browsers */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: #4b5563 #1a1a1a;
+}
+
+*::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+	background-color: #0f0f0f; /* mainBackground - warm dark cozy background */
+	color: #ffffff; /* textPrimary - warm light text */
+}
+
+*::-webkit-scrollbar-thumb {
+	background-color: #4b5563; /* buttonSecondary */
+	border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+	background-color: #6b7280;
+}
+
+dialog::backdrop {
+	background-color: rgba(15, 15, 15, 0.8); /* mainBackground with opacity */
+}
+
+.modal-backdrop {
+	background-color: rgba(15, 15, 15, 0.8); /* mainBackground with opacity */
+}
+
+/* DaisyUI modal override */
+.modal:not(dialog:not(.modal-open)),
+.modal:not(dialog:not(.modal-open)) .modal-box {
+	border: 0px solid #374151; /* borderColor - themed border */
+}
+
+input[type='color'] {
+	border-radius: 0px;
+	padding: 0;
+	border: 0px solid #a67c52; /* latte - coffee themed border */
+	border-radius: 6px;
+}
+
+input[type='color']::-moz-color-swatch {
+	border: none;
+}
+
+input[type='color']::-webkit-color-swatch-wrapper {
+	padding: 0;
+	border-radius: 0;
+}
+
+input[type='color']::-webkit-color-swatch {
+	border: none;
+}
+
+/* Line clamp utility */
+.line-clamp-2 {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
