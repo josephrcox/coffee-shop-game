@@ -34,6 +34,7 @@ export enum MenuItem {
 
 export type db = {
 	tick: number; // 1000 ticks = 1 day
+	managers: manager[];
 	staff: employee[];
 	cash: number;
 	orders: order[];
@@ -58,12 +59,33 @@ export type db = {
 	quests: quest[];
 };
 
+export type manager = {
+	name: string;
+	dailyWage: number;
+	experience: number;
+	happiness: number;
+	trait: Trait;
+};
+
+export enum Trait {
+	GENERAL = 'General manager, speeds up all orders by up to 20%. Gains XP over time. ',
+	FINANCIAL = 'Financial manager, unlocks upgrades like setting prices. Gains XP over time. ',
+	INVENTORY = 'Inventory manager, automatically restocks inventory. Gains XP by restocking.',
+}
+
+export const TraitDescriptions = {
+	[Trait.GENERAL]: 'General',
+	[Trait.FINANCIAL]: 'Financial',
+	[Trait.INVENTORY]: 'Inventory',
+} as const;
+
 export type quest = {
 	id: string;
 	name: string;
 	description?: string;
 	completed: boolean;
 	showingCompletion?: boolean;
+	completionStartTick?: number; // Track when quest completion display started
 	reward: {
 		cash: number;
 		popularity: number;
@@ -113,7 +135,7 @@ export const quests: quest[] = [
 		completed: false,
 		showingCompletion: false,
 		reward: {
-			cash: 1000,
+			cash: 250,
 			popularity: 5,
 		},
 		isCompleted: (db) => db.staff.length > 1,
@@ -124,7 +146,7 @@ export const quests: quest[] = [
 		completed: false,
 		showingCompletion: false,
 		reward: {
-			cash: 500,
+			cash: 250,
 			popularity: 5,
 		},
 		isCompleted: (db) => db.stats.profitYesterday > 0,
@@ -136,7 +158,7 @@ export const quests: quest[] = [
 		completed: false,
 		showingCompletion: false,
 		reward: {
-			cash: 500,
+			cash: 250,
 			popularity: 5,
 		},
 		isCompleted: (db) => db.menu.length > 1,
@@ -169,6 +191,7 @@ export type menuItem = {
 	demand: number; // How much this item attracts customers (baseline: drip coffee = 100)
 	default?: boolean;
 	requires?: string[];
+	marketPrice: number;
 };
 
 export type order = {
@@ -227,6 +250,7 @@ export const possibleMenuItems: menuItem[] = [
 		demand: 100, // Baseline
 		default: true,
 		requires: [Equipment.DRIP_COFFEE_MACHINE],
+		marketPrice: 3,
 	},
 	// single shot
 	{
@@ -238,6 +262,7 @@ export const possibleMenuItems: menuItem[] = [
 		complexity: 3,
 		demand: 80,
 		requires: [Equipment.ESPRESSO_MACHINE, Equipment.COFFEE_GRINDER],
+		marketPrice: 3,
 	},
 	// double shot
 	{
@@ -249,6 +274,7 @@ export const possibleMenuItems: menuItem[] = [
 		complexity: 3,
 		demand: 90,
 		requires: [Equipment.ESPRESSO_MACHINE, Equipment.COFFEE_GRINDER],
+		marketPrice: 4,
 	},
 	{
 		name: MenuItem.AMERICANO_HOT,
@@ -259,6 +285,7 @@ export const possibleMenuItems: menuItem[] = [
 		complexity: 4,
 		demand: 85,
 		requires: [Equipment.ESPRESSO_MACHINE, Equipment.COFFEE_GRINDER],
+		marketPrice: 4,
 	},
 	{
 		name: MenuItem.LATTE,
@@ -274,6 +301,7 @@ export const possibleMenuItems: menuItem[] = [
 			Equipment.COFFEE_GRINDER,
 			Equipment.MILK_FROTHER,
 		],
+		marketPrice: 5,
 	},
 	{
 		name: MenuItem.CAPPUCCINO,
@@ -289,6 +317,7 @@ export const possibleMenuItems: menuItem[] = [
 			Equipment.COFFEE_GRINDER,
 			Equipment.MILK_FROTHER,
 		],
+		marketPrice: 5,
 	},
 	{
 		name: MenuItem.BLACK_TEA,
@@ -299,6 +328,7 @@ export const possibleMenuItems: menuItem[] = [
 		complexity: 1,
 		demand: 40,
 		requires: [],
+		marketPrice: 2,
 	},
 	{
 		name: MenuItem.GREEN_TEA,
@@ -309,6 +339,7 @@ export const possibleMenuItems: menuItem[] = [
 		complexity: 1,
 		demand: 45,
 		requires: [],
+		marketPrice: 2,
 	},
 	{
 		name: MenuItem.ICED_COFFEE,
@@ -319,6 +350,7 @@ export const possibleMenuItems: menuItem[] = [
 		complexity: 2,
 		demand: 95,
 		requires: [Equipment.ICE_MACHINE],
+		marketPrice: 4,
 	},
 	{
 		name: MenuItem.ICED_AMERICANO,
@@ -333,6 +365,7 @@ export const possibleMenuItems: menuItem[] = [
 			Equipment.ESPRESSO_MACHINE,
 			Equipment.COFFEE_GRINDER,
 		],
+		marketPrice: 5,
 	},
 	{
 		name: MenuItem.ICED_LATTE,
@@ -349,6 +382,7 @@ export const possibleMenuItems: menuItem[] = [
 			Equipment.COFFEE_GRINDER,
 			Equipment.MILK_FROTHER,
 		],
+		marketPrice: 6,
 	},
 	{
 		name: MenuItem.ICED_CAPPUCCINO,
@@ -365,6 +399,7 @@ export const possibleMenuItems: menuItem[] = [
 			Equipment.COFFEE_GRINDER,
 			Equipment.MILK_FROTHER,
 		],
+		marketPrice: 6,
 	},
 	// Chai latte
 	{
@@ -377,6 +412,7 @@ export const possibleMenuItems: menuItem[] = [
 		complexity: 4,
 		demand: 115,
 		requires: [],
+		marketPrice: 5,
 	},
 ];
 
@@ -392,7 +428,6 @@ export const purchasableItems: purchasableItem[] = [
 		description: 'For espresso drinks, needs to be ground first',
 		quantity: 100,
 		cost: 100,
-		requires: [Equipment.COFFEE_GRINDER],
 	},
 	{
 		name: Ingredient.MILK_COW,

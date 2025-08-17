@@ -9,9 +9,21 @@
 		showMenuPage,
 		showStaffDetailModal,
 		selectedEmployee,
+		gameSpeed,
+		showPriceAdjustmentModal,
+		selectedMenuItem,
 	} from './store';
-	import { searchForEmployee, purchaseItem, repairEquipment } from './utils';
-	import type { ownedEquipmentItem, employee } from './objects/types';
+	import {
+		searchForEmployee,
+		purchaseItem,
+		repairEquipment,
+		hasManager,
+	} from './utils';
+	import {
+		type ownedEquipmentItem,
+		type employee,
+		Trait,
+	} from './objects/types';
 	import { purchasableItems } from './objects/types';
 
 	// Import modal components
@@ -19,6 +31,8 @@
 	import ShopModal from './ShopModal.svelte';
 	import MenuManagement from './MenuManagement.svelte';
 	import StaffDetailModal from './StaffDetailModal.svelte';
+	import PriceAdjustmentModal from './PriceAdjustmentModal.svelte';
+	import Pill from './Pill.svelte';
 
 	onMount(() => {
 		start();
@@ -30,12 +44,6 @@
 
 	// Hover state for fire button
 	let hoveredEmployeeIndex: number | null = null;
-
-	// Hover state for inventory items
-	let hoveredInventoryIndex: number | null = null;
-
-	// Hover state for equipment items
-	let hoveredEquipmentIndex: number | null = null;
 
 	function getHappinessEmoji(happiness: number, short: boolean = true): string {
 		if (!happiness) return short ? '🙂' : '🙂 Fine';
@@ -116,10 +124,15 @@
 	let profitWithWages = 0;
 
 	$: {
-		const totalWages = $databaseStore.staff.reduce(
+		const staffWages = $databaseStore.staff.reduce(
 			(sum, employee) => sum + employee.dailyWage,
 			0,
 		);
+		const managerWages = $databaseStore.managers.reduce(
+			(sum, manager) => sum + manager.dailyWage,
+			0,
+		);
+		const totalWages = staffWages + managerWages;
 		profitWithWages = $databaseStore.stats.profitToday - totalWages;
 	}
 
@@ -144,12 +157,18 @@
 			alert('You do not have enough money');
 		}
 	}
+
+	function handlePriceAdjustment(item: import('./objects/types').menuItem) {
+		$selectedMenuItem = item;
+		$showPriceAdjustmentModal = true;
+		$paused = true;
+	}
 </script>
 
 <div
 	class="grid grid-cols-5 gap-8 w-full {$paused
-		? 'bg-success/40 text-textPrimary border-interactive'
-		: 'bg-cardBackground/80 text-textPrimary'} px-8 py-4 rounded-b-2xl h-fit shadow-2xl border-b-2 border-info/30"
+		? 'bg-error/40 text-textPrimary border-interactive'
+		: 'bg-cardBackground/80 text-textPrimary'} px-8 py-4 h-fit shadow-2xl border-b-2 border-info/30"
 >
 	<div class="flex flex-col gap-2">
 		<span class="text-accent font-medium"
@@ -157,6 +176,39 @@
 				($databaseStore.tick % 1000) / 10,
 			)}%)</span
 		>
+		<!-- Speed Controls -->
+		<div class="flex flex-row items-center gap-2">
+			<button
+				class="btn btn-xs {$paused
+					? 'bg-error/80 text-textPrimary hover:bg-error/90	'
+					: 'bg-cardBackground/60 text-textSecondary hover:bg-cardBackground/80'} border-none"
+				on:click={() => ($paused = true)}
+			>
+				Paused
+			</button>
+			<button
+				class="btn btn-xs {!$paused && $gameSpeed === 200
+					? 'bg-success/80 text-textPrimary hover:bg-success/90'
+					: 'bg-cardBackground/60 text-textSecondary hover:bg-cardBackground/80'} border-none"
+				on:click={() => {
+					$paused = false;
+					$gameSpeed = 200;
+				}}
+			>
+				Normal
+			</button>
+			<button
+				class="btn btn-xs {!$paused && $gameSpeed === 50
+					? 'bg-success/80 text-textPrimary hover:bg-success/90'
+					: 'bg-cardBackground/60 text-textSecondary hover:bg-cardBackground/80'} border-none"
+				on:click={() => {
+					$paused = false;
+					$gameSpeed = 50;
+				}}
+			>
+				Fast
+			</button>
+		</div>
 		<div class="flex flex-col">
 			<div class="flex flex-row gap-2">
 				<span>Cash: ${$databaseStore.cash}</span>
@@ -188,46 +240,76 @@
 			<button
 				class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
 				on:click={() => {
+					$paused = true;
 					$showHiringModal = true;
 				}}
 			>
 				Hire
 			</button>
 		</div>
-		{#each $databaseStore.staff as employee, index}
-			<!-- svelte-ignore a11y-no-static-element-interactions -->
-			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<div
-				class="flex flex-row gap-1 cursor-pointer duration-200 hover:bg-interactive/20 p-1 rounded {draggedOverIndex ===
-				index
-					? 'bg-info/30'
-					: ''}"
-				draggable="true"
-				on:dragstart={(e) => handleDragStart(e, index)}
-				on:dragover={(e) => handleDragOver(e, index)}
-				on:dragenter={(e) => handleDragEnter(e, index)}
-				on:drop={(e) => handleDrop(e, index)}
-				on:dragend={handleDragEnd}
-				on:mouseenter={() => (hoveredEmployeeIndex = index)}
-				on:mouseleave={() => (hoveredEmployeeIndex = null)}
-				on:click={() => {
-					$selectedEmployee = employee;
-					$showStaffDetailModal = true;
-				}}
-			>
-				<div class="flex flex-row items-center gap-2 w-full">
-					<div class="flex flex-row items-center w-full gap-1">
-						<span class="text-xs"
-							>{getHappinessEmoji(employee.happiness, true)}</span
+		<div class="pb-4 flex flex-col gap-1">
+			{#each $databaseStore.staff as employee, index}
+				<!-- svelte-ignore a11y-no-static-element-interactions -->
+				<!-- svelte-ignore a11y-click-events-have-key-events -->
+				<div
+					class="flex flex-row gap-1 cursor-pointer duration-200 rounded {draggedOverIndex ===
+					index
+						? 'bg-info/30'
+						: ''}"
+					draggable="true"
+					on:dragstart={(e) => handleDragStart(e, index)}
+					on:dragover={(e) => handleDragOver(e, index)}
+					on:dragenter={(e) => handleDragEnter(e, index)}
+					on:drop={(e) => handleDrop(e, index)}
+					on:dragend={handleDragEnd}
+					on:mouseenter={() => (hoveredEmployeeIndex = index)}
+					on:mouseleave={() => (hoveredEmployeeIndex = null)}
+					on:click={() => {
+						$selectedEmployee = employee;
+						$paused = true;
+						$showStaffDetailModal = true;
+					}}
+				>
+					<div class="flex flex-row items-center gap-2 w-full">
+						<div class="flex flex-row items-center w-full gap-1">
+							<span class="text-xs"
+								>{getHappinessEmoji(employee.happiness, true)}</span
+							>
+							<div class=" text-sm">{employee.name}</div>
+						</div>
+						<div
+							class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md"
 						>
-						<div class=" text-sm">{employee.name}</div>
-					</div>
-					<div class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md">
-						{employee.experience}xp
+							{employee.experience}xp
+						</div>
 					</div>
 				</div>
+			{/each}
+		</div>
+		{#if $databaseStore.managers.length > 0}
+			<div class="flex flex-col gap-1">
+				<span class="font-semibold text-accent">Managers</span>
+				{#each $databaseStore.managers as manager, index}
+					<div class="flex flex-row items-center justify-between gap-1 w-full">
+						<div
+							class="flex flex-row items-center justify-between w-full gap-1"
+						>
+							<div class="flex flex-row items-center w-full gap-1">
+								<span class="text-xs"
+									>{getHappinessEmoji(manager.happiness, true)}</span
+								>
+								<span>{manager.name}</span>
+							</div>
+							<div
+								class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md"
+							>
+								{manager.experience}xp
+							</div>
+						</div>
+					</div>
+				{/each}
 			</div>
-		{/each}
+		{/if}
 	</div>
 	<div class="flex flex-col">
 		<div class="flex flex-row gap-2">
@@ -235,6 +317,7 @@
 			<button
 				class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
 				on:click={() => {
+					$paused = true;
 					$showShopModal = true;
 				}}
 			>
@@ -243,39 +326,20 @@
 		</div>
 
 		{#each $databaseStore.inventory as item, index}
+			{@const purchasableItem = purchasableItems.find(
+				(p) => p.name === item.name,
+			)}
 			<div class="flex flex-row items-center justify-between pb-1">
 				<span>{item.name}</span>
-				<!-- svelte-ignore a11y-no-static-element-interactions -->
-				<!-- svelte-ignore a11y-click-events-have-key-events -->
-				<!-- svelte-ignore a11y-mouse-events-have-key-events -->
-				<div
-					class="text-xs text-textPrimary px-1.5 rounded-md flex flex-row h-full items-center gap-1 cursor-pointer transition-all duration-200 {item.quantity >
-					25
-						? 'bg-success/70 hover:bg-success/90'
-						: 'bg-warning/70 hover:bg-warning/90'}"
-					on:mouseenter={() => (hoveredInventoryIndex = index)}
-					on:mouseleave={() => (hoveredInventoryIndex = null)}
-					on:click={() => handleInventoryClick(item.name)}
+				<Pill
+					variant={item.quantity > 25 ? 'success' : 'warning'}
+					normalContent={item.quantity.toString()}
+					hoverContent={purchasableItem
+						? `${item.quantity} +($${purchasableItem.cost})`
+						: item.quantity.toString()}
+					onClick={() => handleInventoryClick(item.name)}
 				>
-					<!-- Inventory level lines -->
-					<!-- Stock count -->
-					{#if hoveredInventoryIndex === index}
-						{@const purchasableItem = purchasableItems.find(
-							(p) => p.name === item.name,
-						)}
-						{#if purchasableItem}
-							<span>
-								{item.quantity} +(${purchasableItem.cost})
-							</span>
-						{:else}
-							<span>
-								{item.quantity}
-							</span>
-						{/if}
-					{:else}
-						<span>
-							{item.quantity}
-						</span>
+					<div slot="visual">
 						{#if getInventoryLines(item.quantity).count > 0}
 							<div class="flex flex-row gap-0.5 opacity-50">
 								{#each Array(getInventoryLines(item.quantity).count) as _}
@@ -285,8 +349,8 @@
 								{/each}
 							</div>
 						{/if}
-					{/if}
-				</div>
+					</div>
+				</Pill>
 			</div>
 		{/each}
 	</div>
@@ -296,6 +360,7 @@
 			<button
 				class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
 				on:click={() => {
+					$paused = true;
 					$showShopModal = true;
 				}}
 			>
@@ -318,28 +383,12 @@
 							Good
 						</div>
 					{:else}
-						<!-- svelte-ignore a11y-no-static-element-interactions -->
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<!-- svelte-ignore a11y-mouse-events-have-key-events -->
-						<div
-							class="text-xs text-textPrimary px-1.5 rounded-md flex flex-row h-full items-center gap-1 cursor-pointer transition-all duration-200 {equipment.quality >
-							0
-								? 'bg-error/70 hover:bg-error/90'
-								: 'bg-interactive/70 hover:bg-interactive/90'}"
-							on:mouseenter={() => (hoveredEquipmentIndex = index)}
-							on:mouseleave={() => (hoveredEquipmentIndex = null)}
-							on:click={() => handleEquipmentRepair(equipment.name)}
-						>
-							{#if hoveredEquipmentIndex === index}
-								<span class="overflow-hidden text-ellipsis whitespace-nowrap">
-									Repair (${Math.floor(equipment.cost / 8)})
-								</span>
-							{:else}
-								<span class={equipment.quality > 0 ? '' : ''}>
-									{equipment.quality > 0 ? 'Poor' : 'Repair'}
-								</span>
-							{/if}
-						</div>
+						<Pill
+							variant={equipment.quality > 0 ? 'error' : 'interactive'}
+							normalContent={equipment.quality > 0 ? 'Poor' : 'Repair'}
+							hoverContent="Repair (${Math.floor(equipment.cost / 8)})"
+							onClick={() => handleEquipmentRepair(equipment.name)}
+						/>
 					{/if}
 				</div>
 			</div>
@@ -358,14 +407,20 @@
 				Add Item
 			</button>
 		</div>
-		{#each $databaseStore.menu as item}
-			<div class="flex flex-row items-center justify-between gap-1 w-full">
-				<span>{item.name}</span>
-				<div class="text-xs bg-info/70 text-textPrimary px-1.5 rounded-md">
-					${item.price}
+		<div class="flex flex-col gap-1">
+			{#each $databaseStore.menu as item}
+				<div class="flex flex-row items-center justify-between gap-1 w-full">
+					<span>{item.name}</span>
+					<Pill
+						variant={'success'}
+						normalContent={`$${item.price.toFixed(2)}`}
+						hoverContent={'Adjust price'}
+						disabled={!hasManager(Trait.FINANCIAL, $databaseStore)}
+						onClick={() => handlePriceAdjustment(item)}
+					/>
 				</div>
-			</div>
-		{/each}
+			{/each}
+		</div>
 	</div>
 </div>
 
@@ -374,3 +429,4 @@
 <ShopModal />
 <MenuManagement />
 <StaffDetailModal />
+<PriceAdjustmentModal />

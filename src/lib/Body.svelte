@@ -5,6 +5,8 @@
 		currentTip,
 		endOfDayMessages,
 		showQuestConfetti,
+		paused,
+		selectedEmployee,
 	} from './store';
 	import type { menuItem } from './objects/types';
 	import { confetti } from '@neoconfetti/svelte';
@@ -66,7 +68,7 @@
 					>
 						{$databaseStore.staff.find(
 							(employee) => employee.currentOrder === order.id,
-						)?.name} is on it! ({order.completion.toFixed(0)}%)
+						)?.name}'s on it! ({order.completion.toFixed(0)}%)
 						{#if (order.originalItems || order.items).length > 1}
 							<span class="text-xs opacity-80"
 								>(item {(order.originalItems || order.items).length -
@@ -81,7 +83,7 @@
 	{/each}
 </div>
 
-{#if $databaseStore.quests.find((quest) => quest.showingCompletion) || $databaseStore.quests.filter((quest) => !quest.completed).length > 0}
+{#if $databaseStore.quests.find((quest) => quest.showingCompletion) || ($databaseStore.quests.filter((quest) => !quest.completed).length > 0 && !$paused)}
 	<div class="flex flex-row gap-2 fixed bottom-8 right-8 z-50">
 		<div
 			class="bg-cardBackground/90 backdrop-blur-md rounded-lg p-4 shadow-2xl border border-info/60"

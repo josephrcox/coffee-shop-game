@@ -5,15 +5,21 @@ import {
 	showEndOfDay,
 	endOfDayMessages,
 	showQuestConfetti,
+	gameSpeed,
 } from './store';
 import {
 	generateOrder,
 	startGame,
 	workOnOrder,
 	calculateTotalDemand,
+	checkWageHealth,
+	updateMarketPrices,
+	autoRestockInventory,
 } from './utils';
 import type { db, quest } from './objects/types';
-import { quests } from './objects/types';
+import { quests, Trait } from './objects/types';
+
+let intervalId: NodeJS.Timeout | null = null;
 
 export function gameLoop() {
 	if (get(showEndOfDay)) return;
@@ -31,11 +37,11 @@ export function gameLoop() {
 	db.totalDemand = calculateTotalDemand(db.menu);
 
 	// Calculate order chance based on both popularity and demand
-	const popularityFactor = Math.pow(db.popularity / 100, 6);
-	const demandFactor = db.totalDemand / 100; // Normalize to drip coffee baseline (100)
-	const baseDemandMultiplier = Math.min(2.0, Math.max(0.1, demandFactor)); // Cap between 0.1x and 2.0x
-	const finalOrderChance =
-		(0.015 + popularityFactor * 0.6) * baseDemandMultiplier;
+	// Both factors contribute linearly and multiplicatively
+	const popularityFactor = db.popularity / 100; // Linear 0-1 scale
+	const demandFactor = Math.max(0.5, db.totalDemand / 100); // Minimum 0.5, baseline at 1
+	const baseChance = 0.08; // 8% base chance when both are at good levels
+	const finalOrderChance = baseChance * popularityFactor * demandFactor;
 
 	if (Math.random() < finalOrderChance) {
 		const newOrder = generateOrder();
@@ -66,6 +72,9 @@ export function gameLoop() {
 		order.ticksToComplete += 1;
 	});
 
+	// Auto-restock inventory if inventory manager is present
+	db = autoRestockInventory(db);
+
 	// 3. Progress work for each employee with a current order
 	db.staff.forEach((employee) => {
 		if (employee.currentOrder !== null) {
@@ -75,14 +84,29 @@ export function gameLoop() {
 				db = workOnOrder(order, db);
 			}
 		}
+		if (employee.dailyWage > 0) {
+			const wageIncrease = checkWageHealth(employee);
+			if (wageIncrease > 0) {
+				console.log(employee.name + ' wants a raise of ' + wageIncrease);
+			}
+		}
 	});
 
 	if (db.tick % 1000 === 0) {
 		// Start of day! :)
-		const totalWages = db.staff.reduce(
+
+		// Update market prices for menu items
+		db = updateMarketPrices(db);
+
+		const staffWages = db.staff.reduce(
 			(sum, employee) => sum + employee.dailyWage,
 			0,
 		);
+		const managerWages = db.managers.reduce(
+			(sum, manager) => sum + manager.dailyWage,
+			0,
+		);
+		const totalWages = staffWages + managerWages;
 
 		// Calculate changes from yesterday
 		db.stats.popularityChange = db.popularity - db.stats.popularityYesterday;
@@ -98,6 +122,9 @@ export function gameLoop() {
 		// --- Happiness Calculation ---
 		const happinessMessages: string[] = [];
 		db.staff.forEach((employee) => {
+			if (employee.dailyWage == 0) {
+				return;
+			}
 			if (!employee.dailyMenuItemsMade) {
 				employee.dailyMenuItemsMade = [];
 			}
@@ -111,7 +138,7 @@ export function gameLoop() {
 				const diff = desiredUniqueItems - uniqueItemsMade;
 				employee.happiness -= 0.005 * diff;
 				happinessMessages.push(
-					`${employee.name} is feeling under-challenged and desires more variety in their daily tasks.`,
+					`${employee.name}: I am feeling under-challenged.`,
 				);
 			}
 			employee.happiness = Math.max(0, Math.min(2, employee.happiness));
@@ -127,6 +154,15 @@ export function gameLoop() {
 				}
 			});
 		}
+
+		db.managers.forEach((manager) => {
+			if (
+				manager.trait === Trait.GENERAL ||
+				manager.trait === Trait.FINANCIAL
+			) {
+				manager.experience += Math.floor(Math.random() * 5);
+			}
+		});
 
 		// Pay staff wages
 		db.cash -= totalWages;
@@ -153,7 +189,6 @@ export function gameLoop() {
 	}
 
 	db.quests.forEach((q: quest) => {
-		console.log(JSON.stringify(q));
 		// Look up the original quest definition to get the isCompleted function
 		const originalQuest = quests.find((original) => original.id === q.id);
 		if (
@@ -165,23 +200,27 @@ export function gameLoop() {
 		) {
 			q.showingCompletion = true;
 			showQuestConfetti.set(true);
-			setTimeout(() => {
-				const currentDb = get(databaseStore);
-				const currentQuest = currentDb.quests.find(
-					(quest) => quest.id === q.id,
-				);
-				if (currentQuest) {
-					currentDb.cash += currentQuest.reward.cash;
-					currentDb.popularity += currentQuest.reward.popularity;
-					currentQuest.completed = true;
-					currentQuest.showingCompletion = false;
-					databaseStore.set(currentDb);
-					if (originalQuest?.onCompleted) {
-						originalQuest.onCompleted(currentDb);
-					}
-				}
-				showQuestConfetti.set(false);
-			}, 5000);
+			// Track when quest completion started (safer than setTimeout)
+			if (!q.completionStartTick) {
+				q.completionStartTick = db.tick;
+			}
+		}
+
+		// Handle quest completion after 5 seconds (5 ticks at normal speed)
+		if (
+			q.showingCompletion &&
+			q.completionStartTick &&
+			db.tick - q.completionStartTick >= 30
+		) {
+			q.completed = true;
+			q.showingCompletion = false;
+			q.completionStartTick = undefined;
+			db.cash += q.reward.cash;
+			db.popularity += q.reward.popularity;
+			showQuestConfetti.set(false);
+			if (originalQuest?.onCompleted) {
+				originalQuest.onCompleted(db);
+			}
 		}
 	});
 
@@ -211,10 +250,36 @@ function fixVariables(game: db) {
 		game.stats.ordersToday = 0;
 	}
 
+	// fix game stats profits
+	game.stats.profitToday = Math.round(game.stats.profitToday);
+	game.stats.profitYesterday = Math.round(game.stats.profitYesterday);
+	game.stats.revenueToday = Math.round(game.stats.revenueToday);
+	game.stats.expensesToday = Math.round(game.stats.expensesToday);
+
+	// Limit employee happiness to 100
+	game.staff.forEach((employee) => {
+		employee.happiness = Math.min(2.0, Math.max(0.1, employee.happiness));
+	});
+
 	return game;
 }
 
 export function start() {
 	gameLoop();
-	setInterval(gameLoop, 200);
+
+	// Clear any existing interval
+	if (intervalId) {
+		clearInterval(intervalId);
+	}
+
+	// Start with current speed
+	intervalId = setInterval(gameLoop, get(gameSpeed));
+
+	// Subscribe to speed changes and restart interval
+	gameSpeed.subscribe((speed) => {
+		if (intervalId) {
+			clearInterval(intervalId);
+		}
+		intervalId = setInterval(gameLoop, speed);
+	});
 }

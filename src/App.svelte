@@ -1,14 +1,34 @@
 <script lang="ts">
 	import Body from './lib/Body.svelte';
 	import Header from './lib/Header.svelte';
-	import { paused } from './lib/store';
+	import DeveloperModal from './lib/DeveloperModal.svelte';
+	import {
+		paused,
+		showDeveloperModal,
+		showEndOfDay,
+		showHiringModal,
+		showMenuPage,
+		showPriceAdjustmentModal,
+		showQuestConfetti,
+		showShopModal,
+		showStaffDetailModal,
+	} from './lib/store';
 	document.addEventListener('keydown', (e) => {
-		// \ key
 		if (e.key === '\\') {
-			localStorage.clear();
-			window.location.reload();
+			showDeveloperModal.set(true);
 		} else if (e.key === 'p') {
 			paused.set(!$paused);
+		} else if (e.key == 'Escape') {
+			// Close all modal stores.
+			showDeveloperModal.set(false);
+			showEndOfDay.set(false);
+			showQuestConfetti.set(false);
+			showMenuPage.set(false);
+			showHiringModal.set(false);
+			showShopModal.set(false);
+			showStaffDetailModal.set(false);
+			showPriceAdjustmentModal.set(false);
+			paused.set(false);
 		}
 	});
 </script>
@@ -18,4 +38,5 @@
 >
 	<Header />
 	<Body />
+	<DeveloperModal />
 </div>

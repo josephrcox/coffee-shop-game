@@ -9,6 +9,8 @@ import {
 	type menuItem,
 	purchasableItems,
 	quests,
+	type manager,
+	Trait,
 } from './objects/types';
 
 let randomFirstNames = [
@@ -46,12 +48,45 @@ let randomLastNames = [
 	'Moore',
 ];
 
-export function generateCustomerName(): string {
-	return randomFirstNames[Math.floor(Math.random() * randomFirstNames.length)];
+export function generateName(trait?: Trait): string {
+	let prefix = '';
+	if (trait) {
+		switch (trait) {
+			case Trait.GENERAL:
+				prefix = '👔 ';
+				break;
+			case Trait.FINANCIAL:
+				prefix = '💰 ';
+				break;
+			case Trait.INVENTORY:
+				prefix = '📦 ';
+				break;
+		}
+	}
+	return (
+		prefix +
+		randomFirstNames[Math.floor(Math.random() * randomFirstNames.length)]
+	);
 }
 
 export function calculateTotalDemand(menu: menuItem[]): number {
-	return menu.reduce((total, item) => total + item.demand, 0);
+	return menu.reduce((total, item) => {
+		// Calculate demand adjustment based on price vs market price
+		let adjustedDemand = item.demand;
+
+		if (item.marketPrice > 0) {
+			// Price ratio: how much current price differs from market price
+			const priceRatio = item.price / item.marketPrice;
+
+			// Inverse relationship: higher price = lower demand
+			// If price is double market price (ratio = 2), demand becomes 50% (1/2)
+			// Cap the adjustment to prevent extreme values
+			const demandMultiplier = Math.max(0.1, Math.min(3.0, 1 / priceRatio));
+			adjustedDemand = item.demand * demandMultiplier;
+		}
+
+		return total + adjustedDemand;
+	}, 0);
 }
 
 export function updateTotalDemand(game: db): db {
@@ -59,8 +94,12 @@ export function updateTotalDemand(game: db): db {
 	return game;
 }
 
+export function hasManager(trait: Trait, game: db): boolean {
+	return game.managers.some((manager) => manager.trait === trait);
+}
+
 export function startGame(game: db): db {
-	const name = prompt('Enter your name');
+	const name = 'You';
 	if (name) {
 		const firstEmployee = {
 			name: name,
@@ -89,6 +128,8 @@ export function startGame(game: db): db {
 	game.stats.ordersChange = 0;
 	game.startingCash = game.cash;
 	game.quests = quests;
+	game.managers = [];
+	game.tick = 1001;
 	return game;
 }
 
@@ -100,8 +141,27 @@ export function workOnOrder(order: order, game: db): db {
 	const currentItem = order.items[0];
 	if (!currentItem) return game; // Should not happen if order is managed correctly
 
+	let hasGeneralManager = game.managers.some((m) => m.trait === Trait.GENERAL);
+
 	// Check for required equipment
 	let totalSpeedMultiplier = 1.0;
+	if (hasGeneralManager) {
+		// Get general manager's XP
+		const generalManager = game.managers.find((m) => m.trait === Trait.GENERAL);
+		if (generalManager) {
+			if (generalManager.experience < 2000) {
+				totalSpeedMultiplier *= 1.1;
+			} else if (generalManager.experience < 4000) {
+				totalSpeedMultiplier *= 1.3;
+			} else if (generalManager.experience < 6000) {
+				totalSpeedMultiplier *= 1.5;
+			} else if (generalManager.experience < 8000) {
+				totalSpeedMultiplier *= 1.7;
+			} else {
+				totalSpeedMultiplier *= 2.0;
+			}
+		}
+	}
 	if (currentItem.requires) {
 		for (const req of currentItem.requires) {
 			const ownedEquipment = game.ownedEquipment.find((eq) => eq.name === req);
@@ -191,7 +251,7 @@ export function workOnOrder(order: order, game: db): db {
 		game.stats.revenueToday += currentItem.price;
 
 		if (Math.random() < 0.2) {
-			employee.experience += currentItem.complexity * 0.5;
+			employee.experience += currentItem.complexity * 0.1;
 		}
 
 		// Update proficiency
@@ -268,8 +328,8 @@ export function workOnOrder(order: order, game: db): db {
 			const baseChance = Math.min(0.4, 0.1 + experienceRatio * 0.15);
 
 			let popularityModifier;
-			if (game.popularity < 50) {
-				const lowPopularityBonus = (50 - game.popularity) * 0.4;
+			if (game.popularity < 35) {
+				const lowPopularityBonus = (35 - game.popularity) * 0.4;
 				popularityModifier = 1 + lowPopularityBonus / 100;
 			} else {
 				const popularityPenalty = Math.pow((game.popularity - 50) / 50, 1.5);
@@ -282,9 +342,9 @@ export function workOnOrder(order: order, game: db): db {
 					originalOrderItems.length -
 					1) *
 				0.03;
-			const patienceBonus = ((order.customerPatience - 400) / 600) * 0.05;
+			const patienceBonus = ((order.customerPatience - 400) / 600) * 0.04;
 			const totalChance = Math.max(
-				0.05,
+				0.04,
 				finalChance + complexityBonus + patienceBonus,
 			);
 
@@ -406,8 +466,8 @@ export function generateOrder(): order | null {
 
 	// Adjust customer patience based on popularity
 	const currentPopularity = db.popularity;
-	let patienceRange = 1000 - 400; // Default range
-	let patienceMin = 400;
+	let patienceRange = 800 - 800; // Default range
+	let patienceMin = 200;
 
 	if (currentPopularity < 50) {
 		const patienceBoost = (50 - currentPopularity) * 8; // 0-200 boost
@@ -417,7 +477,7 @@ export function generateOrder(): order | null {
 
 	return {
 		id: db.orders.length + Date.now(), // More unique ID
-		customer: generateCustomerName(),
+		customer: generateName(),
 		items: [...orderItems],
 		originalItems: [...orderItems],
 		completion: 0,
@@ -435,12 +495,12 @@ export function searchForEmployee(): employee[] {
 		// Calculate salary based on experience with exponential scaling
 		// Base salary: 50-80 for low experience
 		// High experience (750+) should cost 300+
-		const baseSalary = 50 + Math.floor(Math.random() * 31); // 50-80
-		const experienceMultiplier = Math.pow(experience / 1000, 1.5); // Exponential scaling
-		const experienceBonus = Math.floor(experienceMultiplier * 250); // Max 250 bonus at 1000 XP
+		const baseSalary = 60 + Math.floor(Math.random() * 31);
+		const experienceMultiplier = Math.pow(experience / 1000, 1.6); // Exponential scaling
+		const experienceBonus = Math.floor(experienceMultiplier * 400); // Max 400 bonus at 1000 XP
 
 		let employee = {
-			name: generateCustomerName(),
+			name: generateName(),
 			dailyWage: baseSalary + experienceBonus,
 			experience: experience,
 			currentOrder: null,
@@ -454,67 +514,291 @@ export function searchForEmployee(): employee[] {
 	return availableEmployees;
 }
 
+export function searchForManagers(): manager[] {
+	const db = get(databaseStore);
+	const hiredTraits = db.managers.map((m) => m.trait);
+	const availableTraits = Object.values(Trait).filter(
+		(trait) => !hiredTraits.includes(trait),
+	);
+
+	if (availableTraits.length === 0) return [];
+
+	const shuffledTraits = [...availableTraits].sort(() => Math.random() - 0.5);
+	const numToGenerate = Math.min(3, availableTraits.length);
+
+	return Array.from({ length: numToGenerate }, (_, i) => {
+		const experience = Math.floor(Math.random() * 1000 + 10);
+		const wage = Math.floor(
+			Math.random() * 200 + Math.pow(experience / 1000, 1.5) * 400 + 100,
+		);
+
+		return {
+			name: generateName(shuffledTraits[i]),
+			dailyWage: wage,
+			experience,
+			happiness: Math.random() * 1.2 + 0.4,
+			trait: shuffledTraits[i],
+		};
+	});
+}
+
+export function checkWageHealth(employee: employee): number {
+	// This function checks if the wage of the employee and their experience is fair.
+	// Calculate what their wage should be based on current experience level
+	// Only suggest an increase if the difference is >15% of their current wage
+
+	// Use the same formula as when hiring employees
+	const baseSalary = 60 + 15; // Use middle of range (60-90) for consistency
+	const experienceMultiplier = Math.pow(employee.experience / 1000, 1.6); // Match hiring formula
+	const experienceBonus = Math.floor(experienceMultiplier * 400); // Match hiring formula
+	const fairWage = baseSalary + experienceBonus;
+
+	const currentWage = employee.dailyWage;
+	const difference = fairWage - currentWage;
+
+	const threshold = currentWage * 0.15; // 15% threshold for wage increases
+	if (difference > threshold) {
+		// Round to nearest 2
+		return Math.round(difference / 2) * 2;
+	}
+
+	return 0; // No wage increase needed
+}
+
 export function purchaseItem(
 	itemName: string,
 	quantity: number,
 	cost: number,
 	description: string,
 ): boolean {
-	const db = get(databaseStore);
+	// Use update method to properly trigger reactivity
+	let success = false;
 
-	// Check if player has enough money
-	if (db.cash < cost) {
-		return false;
-	}
+	databaseStore.update((db) => {
+		// Check if player has enough money
+		if (db.cash < cost) {
+			return db;
+		}
 
-	// Deduct money and add to expenses
-	db.cash -= cost;
-	db.stats.expensesToday += cost;
+		// Deduct money and add to expenses
+		db.cash -= cost;
+		db.stats.expensesToday += cost;
 
-	// Find existing inventory item or create new one
-	const existing = db.inventory.find((i) => i.name === itemName);
-	if (existing) {
-		existing.quantity += quantity;
-	} else {
-		db.inventory = [
-			...db.inventory,
-			{
-				name: itemName,
-				description: description,
-				quantity: quantity,
-			},
-		];
-	}
+		// Find existing inventory item or create new one
+		const existing = db.inventory.find((i) => i.name === itemName);
+		if (existing) {
+			existing.quantity += quantity;
+		} else {
+			db.inventory = [
+				...db.inventory,
+				{
+					name: itemName,
+					description: description,
+					quantity: quantity,
+				},
+			];
+		}
 
-	// Update the store to trigger reactivity
-	databaseStore.set(db);
-	return true;
+		success = true;
+		return db;
+	});
+
+	return success;
 }
 
 export function repairEquipment(equipmentName: string): boolean {
-	const db = get(databaseStore);
+	// Use update method to properly trigger reactivity
+	let success = false;
 
-	// Find the equipment to repair
-	const equipment = db.ownedEquipment.find((e) => e.name === equipmentName);
-	if (!equipment) {
-		return false;
+	databaseStore.update((db) => {
+		// Find the equipment to repair
+		const equipment = db.ownedEquipment.find((e) => e.name === equipmentName);
+		if (!equipment) {
+			return db;
+		}
+
+		const repairCost = equipment.cost / 8;
+
+		// Check if player has enough money
+		if (db.cash < repairCost) {
+			return db;
+		}
+
+		// Deduct money and add to expenses
+		db.cash -= repairCost;
+		db.stats.expensesToday += repairCost;
+
+		// Repair the equipment to full quality
+		equipment.quality = 100;
+
+		success = true;
+		return db;
+	});
+
+	return success;
+}
+
+export function updateMenuItemPrice(
+	itemName: string,
+	newPrice: number,
+): boolean {
+	// Use update method to properly trigger reactivity
+	let success = false;
+
+	databaseStore.update((db) => {
+		// Find the menu item to update
+		const menuItem = db.menu.find((item) => item.name === itemName);
+		if (!menuItem) {
+			return db;
+		}
+
+		// Update the price
+		menuItem.price = newPrice;
+
+		success = true;
+		return db;
+	});
+
+	return success;
+}
+
+export function calculateIngredientCost(menuItem: menuItem): number {
+	let totalCost = 0;
+
+	// Iterate through each ingredient in the menu item
+	for (const ingredientName in menuItem.ingredients) {
+		const quantityNeeded = menuItem.ingredients[ingredientName];
+
+		// Find the purchasable item for this ingredient
+		const purchasableItem = purchasableItems.find(
+			(item) => item.name === ingredientName,
+		);
+
+		if (purchasableItem) {
+			// Calculate cost per unit: total cost / quantity in package
+			const costPerUnit = purchasableItem.cost / purchasableItem.quantity;
+			// Add to total cost: cost per unit * quantity needed
+			totalCost += costPerUnit * quantityNeeded;
+		}
 	}
 
-	const repairCost = equipment.cost / 8;
+	return totalCost;
+}
 
-	// Check if player has enough money
-	if (db.cash < repairCost) {
-		return false;
+export function updateMarketPrices(game: db): db {
+	game.menu.forEach((menuItem) => {
+		// Generate fluctuation with weighted randomness
+		// 70% chance of small change (0-3%), 25% chance of medium (3-7%), 5% chance of large (7-10%)
+		let fluctuationMagnitude: number;
+		const rand = Math.random();
+
+		if (rand < 0.7) {
+			// Small change: 0-3%
+			fluctuationMagnitude = Math.random() * 0.03;
+		} else if (rand < 0.95) {
+			// Medium change: 3-7%
+			fluctuationMagnitude = 0.03 + Math.random() * 0.04;
+		} else {
+			// Large change: 7-10%
+			fluctuationMagnitude = 0.07 + Math.random() * 0.03;
+		}
+
+		// Random direction (up or down)
+		const direction = Math.random() < 0.5 ? -1 : 1;
+		const fluctuation = direction * fluctuationMagnitude;
+
+		// Apply the change
+		const newPrice = menuItem.marketPrice * (1 + fluctuation);
+
+		// Clamp between $1 and $10
+		menuItem.marketPrice = Math.max(1, Math.min(10, newPrice));
+
+		// Round to 2 decimal places
+		menuItem.marketPrice = Math.round(menuItem.marketPrice * 100) / 100;
+	});
+
+	return game;
+}
+
+export function autoRestockInventory(game: db): db {
+	// Check if inventory manager is present
+	if (!hasManager(Trait.INVENTORY, game)) {
+		return game;
 	}
 
-	// Deduct money and add to expenses
-	db.cash -= repairCost;
-	db.stats.expensesToday += repairCost;
+	// Calculate restock chance based on manager experience
+	// Target timings: 200xp=~7sec, 500xp=~5sec, 1000xp=~1.5sec at normal speed (200ms/tick)
+	const inventoryManager = game.managers.find(
+		(m) => m.trait === Trait.INVENTORY,
+	);
 
-	// Repair the equipment to full quality
-	equipment.quality = 100;
+	if (!inventoryManager) {
+		return game;
+	}
 
-	// Update the store to trigger reactivity
-	databaseStore.set(db);
-	return true;
+	// Formula: waitTime in ticks = 50 - (experience - 200) * 0.034375
+	// This gives: 200xp=50 ticks (10sec), 500xp=39.7 ticks (~8sec), 1000xp=22.5 ticks (~4.5sec)
+	const experience = Math.max(200, Math.min(1000, inventoryManager.experience));
+	const waitTimeInTicks = 50 - (experience - 200) * 0.034375;
+	const restockChance = 1 / waitTimeInTicks;
+
+	if (Math.random() > restockChance) {
+		return game;
+	}
+
+	// Check each inventory item for restocking
+	game.inventory.forEach((inventoryItem) => {
+		if (inventoryItem.quantity < 10) {
+			// Find the corresponding purchasable item
+			const purchasableItem = purchasableItems.find(
+				(item) => item.name === inventoryItem.name,
+			);
+
+			if (purchasableItem) {
+				// Check if we can afford it and have required equipment
+				const canAfford = game.cash >= purchasableItem.cost;
+
+				// Check equipment requirements if any
+				let hasRequiredEquipment = true;
+				if (purchasableItem.requires) {
+					const requiredEquipment = purchasableEquipment.find((e) =>
+						purchasableItem.requires?.includes(e.name),
+					);
+					if (requiredEquipment) {
+						hasRequiredEquipment = game.ownedEquipment.some(
+							(e) => e.name === requiredEquipment.name,
+						);
+					}
+				}
+
+				// Auto-purchase if we can afford it and have required equipment
+				if (canAfford && hasRequiredEquipment) {
+					// Calculate how many to buy to reach at least 10
+					const quantityNeeded = 10 - inventoryItem.quantity;
+					const purchaseQuantity = purchasableItem.quantity;
+
+					// Buy enough packages to reach the minimum
+					const packagesToBuy = Math.ceil(quantityNeeded / purchaseQuantity);
+					const totalCost = purchasableItem.cost * packagesToBuy;
+
+					// Final affordability check for multiple packages
+					if (game.cash >= totalCost) {
+						// Deduct money and add to expenses
+						game.cash -= totalCost;
+						game.stats.expensesToday += totalCost;
+
+						// Add items to inventory
+						inventoryItem.quantity += purchaseQuantity * packagesToBuy;
+						game.managers.forEach((manager) => {
+							if (manager.trait === Trait.INVENTORY) {
+								manager.experience += Math.floor(Math.random() * 5);
+							}
+						});
+					}
+				}
+			}
+		}
+	});
+
+	return game;
 }
