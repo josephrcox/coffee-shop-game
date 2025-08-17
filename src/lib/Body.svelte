@@ -27,9 +27,10 @@
 
 <div
 	class="flex flex-col gap-4 p-8 bg-mainBackground text-textPrimary max-h-[65vh] overflow-y-clip"
+	data-nux-id="orders-list"
 >
 	<div class="flex flex-row justify-between items-start">
-		<span class="text-2xl text-accent font-semibold"
+		<span class="text-2xl text-accent font-semibold" data-nux-id="orders-header"
 			>Orders <span class="text-xs text-textSecondary"
 				>({$databaseStore.orders.filter((order) => order.items.length > 0)
 					.length})</span

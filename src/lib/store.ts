@@ -1,4 +1,5 @@
-import { writable } from 'svelte/store';
+import { writable, get as getStore } from 'svelte/store';
+import { tutorial } from './tutorial';
 import {
 	quests,
 	type db,
@@ -19,14 +20,8 @@ export const DEFAULT_DB: db = {
 	cash: 500,
 	orders: [],
 	popularity: 25, // 0-100
-	totalDemand: 100, // Starting with drip coffee baseline
-	inventory: [
-		{
-			name: Ingredient.COFFEE_GROUNDS,
-			description: 'For drip coffee',
-			quantity: 10,
-		},
-	],
+	totalDemand: 0, // Starting with drip coffee baseline
+	inventory: [],
 	quests: quests,
 	menu: [],
 	ownedEquipment: [
@@ -137,7 +132,10 @@ if (import.meta.hot) {
 }
 
 export const showEndOfDay = writable<boolean>(false);
-export const paused = writable<boolean>(false);
+const initialTutorial = getStore(tutorial);
+export const paused = writable<boolean>(
+	initialTutorial.active && (initialTutorial.step ?? 0) < 4 ? true : false,
+);
 export const currentTip = writable<string>('');
 export const endOfDayMessages = writable<string[]>([]);
 export const showQuestConfetti = writable<boolean>(false);
@@ -145,14 +143,131 @@ export const showQuestConfetti = writable<boolean>(false);
 // Game speed setting (in milliseconds)
 export const gameSpeed = writable<number>(200);
 
+// UI state persistence for modal visibility
+const UI_STATE_KEY = 'the-grind-ui';
+type UiState = {
+	showHiringModal?: boolean;
+	showShopModal?: boolean;
+	showMenuPage?: boolean;
+	showStaffDetailModal?: boolean;
+	showDeveloperModal?: boolean;
+	showPriceAdjustmentModal?: boolean;
+};
+
+function loadUiStateFromStorage(): UiState {
+	try {
+		const stored = localStorage.getItem(UI_STATE_KEY);
+		if (stored) return JSON.parse(stored);
+	} catch {}
+	return {};
+}
+
+const uiInitial = loadUiStateFromStorage();
+// Detect if UI state existed before; if not, avoid auto-opening modals on first load
+export const hadPreviousUiState = !!localStorage.getItem(UI_STATE_KEY);
+
 // Modal visibility stores
-export const showHiringModal = writable<boolean>(false);
-export const showShopModal = writable<boolean>(false);
-export const showMenuPage = writable<boolean>(false);
-export const showStaffDetailModal = writable<boolean>(false);
-export const showDeveloperModal = writable<boolean>(false);
-export const showPriceAdjustmentModal = writable<boolean>(false);
+export const showHiringModal = writable<boolean>(!!uiInitial.showHiringModal);
+export const showShopModal = writable<boolean>(!!uiInitial.showShopModal);
+export const showMenuPage = writable<boolean>(!!uiInitial.showMenuPage);
+export const showStaffDetailModal = writable<boolean>(
+	!!uiInitial.showStaffDetailModal,
+);
+export const showDeveloperModal = writable<boolean>(
+	!!uiInitial.showDeveloperModal,
+);
+export const showPriceAdjustmentModal = writable<boolean>(
+	!!uiInitial.showPriceAdjustmentModal,
+);
 
 // Modal data stores
 export const selectedEmployee = writable<employee | null>(null);
 export const selectedMenuItem = writable<menuItem | null>(null);
+
+// Keep the game paused while the tutorial is active; unpause when it finishes
+let tutorialPauseUnsubscribe: (() => void) | null = null;
+let pausedEnforceUnsubscribe: (() => void) | null = null;
+
+function setupTutorialPauseSubscription() {
+	if (tutorialPauseUnsubscribe) {
+		tutorialPauseUnsubscribe();
+	}
+	// When tutorial is active, force paused = true; when inactive, default to false
+	tutorialPauseUnsubscribe = tutorial.subscribe((t) => {
+		// Keep paused only for early steps (< 4). From step 4 onwards, auto-unpause.
+		const shouldPause = t.active && (t.step ?? 0) < 4;
+		paused.set(shouldPause);
+	});
+}
+
+setupTutorialPauseSubscription();
+
+function setupPausedEnforceSubscription() {
+	if (pausedEnforceUnsubscribe) {
+		pausedEnforceUnsubscribe();
+	}
+	pausedEnforceUnsubscribe = paused.subscribe((isPaused) => {
+		// If tutorial is active and still in early steps, ensure paused stays true
+		const t = getStore(tutorial);
+		if (t.active && (t.step ?? 0) < 4 && !isPaused) {
+			paused.set(true);
+		}
+	});
+}
+
+setupPausedEnforceSubscription();
+
+// Persist UI modal states
+let uiUnsubscribes: Array<() => void> = [];
+
+function writeUiState() {
+	const value: UiState = {
+		showHiringModal: getStore(showHiringModal),
+		showShopModal: getStore(showShopModal),
+		showMenuPage: getStore(showMenuPage),
+		showStaffDetailModal: getStore(showStaffDetailModal),
+		showDeveloperModal: getStore(showDeveloperModal),
+		showPriceAdjustmentModal: getStore(showPriceAdjustmentModal),
+	};
+	try {
+		localStorage.setItem(UI_STATE_KEY, JSON.stringify(value));
+	} catch {}
+}
+
+function setupUiStateSubscriptions() {
+	// Cleanup existing subscriptions
+	uiUnsubscribes.forEach((u) => u());
+	uiUnsubscribes = [];
+
+	uiUnsubscribes.push(
+		showHiringModal.subscribe(() => writeUiState()),
+		showShopModal.subscribe(() => writeUiState()),
+		showMenuPage.subscribe(() => writeUiState()),
+		showStaffDetailModal.subscribe(() => writeUiState()),
+		showDeveloperModal.subscribe(() => writeUiState()),
+		showPriceAdjustmentModal.subscribe(() => writeUiState()),
+	);
+}
+
+setupUiStateSubscriptions();
+
+if (import.meta.hot) {
+	import.meta.hot.dispose(() => {
+		if (tutorialPauseUnsubscribe) {
+			tutorialPauseUnsubscribe();
+			tutorialPauseUnsubscribe = null;
+		}
+		if (pausedEnforceUnsubscribe) {
+			pausedEnforceUnsubscribe();
+			pausedEnforceUnsubscribe = null;
+		}
+		uiUnsubscribes.forEach((u) => u());
+		uiUnsubscribes = [];
+	});
+
+	import.meta.hot.accept(() => {
+		setupTutorialPauseSubscription();
+		setupPausedEnforceSubscription();
+		setupUiStateSubscriptions();
+	});
+}

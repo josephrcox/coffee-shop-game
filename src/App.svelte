@@ -13,6 +13,7 @@
 		showShopModal,
 		showStaffDetailModal,
 	} from './lib/store';
+	import TutorialOverlay from './lib/TutorialOverlay.svelte';
 	document.addEventListener('keydown', (e) => {
 		if (e.key === '\\') {
 			showDeveloperModal.set(true);
@@ -38,5 +39,6 @@
 >
 	<Header />
 	<Body />
+	<TutorialOverlay />
 	<DeveloperModal />
 </div>

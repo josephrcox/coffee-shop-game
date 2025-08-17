@@ -40,8 +40,13 @@ export function gameLoop() {
 	// Both factors contribute linearly and multiplicatively
 	const popularityFactor = db.popularity / 100; // Linear 0-1 scale
 	const demandFactor = Math.max(0.5, db.totalDemand / 100); // Minimum 0.5, baseline at 1
-	const baseChance = 0.08; // 8% base chance when both are at good levels
-	const finalOrderChance = baseChance * popularityFactor * demandFactor;
+	const baseChance = 0.1; // 8% base chance when both are at good levels
+	let finalOrderChance = baseChance * popularityFactor * demandFactor;
+
+	// if db.orders.length < 3, override chance to 20%
+	if (db.orders.length < 3) {
+		finalOrderChance = 0.2;
+	}
 
 	if (Math.random() < finalOrderChance) {
 		const newOrder = generateOrder();

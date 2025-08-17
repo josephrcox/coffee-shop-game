@@ -24,112 +24,161 @@
 	icon="👥"
 	onClose={() => ($showHiringModal = false)}
 >
-	<div slot="headerExtra" class="text-right">
+	<div slot="headerExtra" class="text-right" data-nux-id="hiring-intro">
 		<div class="text-sm text-textSecondary">Current Staff</div>
 		<div class="text-xl font-bold text-interactive">
 			{$databaseStore.staff.length}
 		</div>
 	</div>
 
-	<div slot="content" class="flex flex-row gap-8">
+	<div slot="content" class="space-y-8">
 		<!-- Managers Section -->
-		<div class="flex-1">
-			<h4
-				class="text-lg font-semibold mb-2 text-lightAccent flex items-center gap-2"
-			>
-				👔 Available Managers
-			</h4>
+		<div>
+			<div class="flex items-center gap-2 mb-3">
+				<div class="text-lg">👔</div>
+				<h2 class="text-lg font-bold text-lightAccent">Available Managers</h2>
+			</div>
 			<p class="text-sm text-textSecondary mb-4">
 				Managers provide special bonuses and can unlock new features based on
 				their trait.
 			</p>
-			<div class="flex flex-col gap-4">
-				{#each availableManagers as manager}
-					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<!-- svelte-ignore a11y-no-static-element-interactions -->
-					<div
-						class="bg-cardBackground/60 backdrop-blur-sm rounded-xl shadow-lg border border-buttonPrimary/50 p-2 cursor-pointer transition-all duration-200 hover:shadow-xl hover:border-interactive/70 hover:bg-cardBackground/80"
-						on:click={() => {
-							$databaseStore.managers.push(manager);
-							availableManagers = availableManagers.filter(
-								(m) => m.name !== manager.name,
-							);
-						}}
-					>
-						<div class="flex items-start justify-between">
-							<div class="flex-1">
-								<h5 class="font-semibold text-lg text-textPrimary mb-1">
-									{manager.name}
-								</h5>
-								<div class="text-xs text-textSecondary mb-2">
-									{manager.trait}
-								</div>
-							</div>
-							<div
-								class="bg-success/80 text-textPrimary text-xs font-medium px-2 py-1 rounded-full"
+			<div class="overflow-x-auto">
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="border-b border-borderColor/30">
+							<th class="text-left py-2 px-2 font-medium text-textSecondary"
+								>Name</th
 							>
-								{manager.experience}xp
-							</div>
-						</div>
-						<div class="flex-row flex justify-between items-center">
-							<span class="text-lg font-bold text-warning"
-								>${manager.dailyWage}/day</span
+							<th class="text-left py-2 px-2 font-medium text-textSecondary"
+								>Trait</th
 							>
-							<span class="text-sm text-lightAccent">
-								{getHappinessEmoji(manager.happiness, true)}
-							</span>
-						</div>
-					</div>
-				{/each}
+							<th class="text-center py-2 px-2 font-medium text-textSecondary"
+								>Experience</th
+							>
+							<th class="text-center py-2 px-2 font-medium text-textSecondary"
+								>Daily Wage</th
+							>
+							<th class="text-center py-2 px-2 font-medium text-textSecondary"
+								>Happiness</th
+							>
+							<th class="text-center py-2 px-2 font-medium text-textSecondary"
+								>Action</th
+							>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-borderColor/20">
+						{#each availableManagers as manager}
+							<tr
+								class="hover:bg-mainBackground/30 transition-colors cursor-pointer"
+								on:click={() => {
+									$databaseStore.managers.push(manager);
+									availableManagers = availableManagers.filter(
+										(m) => m.name !== manager.name,
+									);
+								}}
+							>
+								<td class="py-2 px-2 font-medium text-textPrimary"
+									>{manager.name}</td
+								>
+								<td class="py-2 px-2 text-textSecondary text-xs"
+									>{manager.trait}</td
+								>
+								<td class="py-2 px-2 text-center">
+									<span
+										class="bg-success/80 text-textPrimary text-xs font-medium px-2 py-1 rounded-full"
+									>
+										{manager.experience}xp
+									</span>
+								</td>
+								<td class="py-2 px-2 text-center font-bold text-warning"
+									>${manager.dailyWage}/day</td
+								>
+								<td class="py-2 px-2 text-center text-lightAccent"
+									>{getHappinessEmoji(manager.happiness, true)}</td
+								>
+								<td class="py-2 px-2 text-center">
+									<button
+										class="btn btn-xs bg-special hover:bg-special/80 text-textPrimary border-special/50"
+									>
+										Hire
+									</button>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			</div>
 		</div>
 
 		<!-- Employees Section -->
-		<div class="flex-1">
-			<h4
-				class="text-lg font-semibold mb-2 text-lightAccent flex items-center gap-2"
-			>
-				🎯 Available Employees
-			</h4>
+		<div>
+			<div class="flex items-center gap-2 mb-3">
+				<div class="text-lg">🎯</div>
+				<h2 class="text-lg font-bold text-lightAccent">Available Employees</h2>
+			</div>
 			<p class="text-sm text-textSecondary mb-4">
 				High XP employees want to work on more complex orders, but they move
 				much faster overall.
 			</p>
-			<div class="flex flex-col gap-4">
-				{#each availableEmployees as employee}
-					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<!-- svelte-ignore a11y-no-static-element-interactions -->
-					<div
-						class="bg-cardBackground/60 backdrop-blur-sm rounded-xl shadow-lg border border-buttonPrimary/50 p-2 cursor-pointer transition-all duration-200 hover:shadow-xl hover:border-interactive/70 hover:bg-cardBackground/80"
-						on:click={() => {
-							$databaseStore.staff.push(employee);
-							availableEmployees = availableEmployees.filter(
-								(e) => e.name !== employee.name,
-							);
-						}}
-					>
-						<div class="flex items-start justify-between">
-							<div class="flex-1">
-								<h5 class="font-semibold text-lg text-textPrimary mb-1">
-									{employee.name}
-								</h5>
-							</div>
-							<div
-								class="bg-success/80 text-textPrimary text-xs font-medium px-2 py-1 rounded-full"
+			<div class="overflow-x-auto">
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="border-b border-borderColor/30">
+							<th class="text-left py-2 px-2 font-medium text-textSecondary"
+								>Name</th
 							>
-								{employee.experience}xp
-							</div>
-						</div>
-						<div class="flex-row flex justify-between items-center">
-							<span class="text-lg font-bold text-warning"
-								>${employee.dailyWage}/day</span
+							<th class="text-center py-2 px-2 font-medium text-textSecondary"
+								>Experience</th
 							>
-							<span class="text-sm text-lightAccent">
-								{getHappinessEmoji(employee.happiness, true)}
-							</span>
-						</div>
-					</div>
-				{/each}
+							<th class="text-center py-2 px-2 font-medium text-textSecondary"
+								>Daily Wage</th
+							>
+							<th class="text-center py-2 px-2 font-medium text-textSecondary"
+								>Happiness</th
+							>
+							<th class="text-center py-2 px-2 font-medium text-textSecondary"
+								>Action</th
+							>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-borderColor/20">
+						{#each availableEmployees as employee}
+							<tr
+								class="hover:bg-mainBackground/30 transition-colors cursor-pointer"
+								on:click={() => {
+									$databaseStore.staff.push(employee);
+									availableEmployees = availableEmployees.filter(
+										(e) => e.name !== employee.name,
+									);
+								}}
+							>
+								<td class="py-2 px-2 font-medium text-textPrimary"
+									>{employee.name}</td
+								>
+								<td class="py-2 px-2 text-center">
+									<span
+										class="bg-success/80 text-textPrimary text-xs font-medium px-2 py-1 rounded-full"
+									>
+										{employee.experience}xp
+									</span>
+								</td>
+								<td class="py-2 px-2 text-center font-bold text-warning"
+									>${employee.dailyWage}/day</td
+								>
+								<td class="py-2 px-2 text-center text-lightAccent"
+									>{getHappinessEmoji(employee.happiness, true)}</td
+								>
+								<td class="py-2 px-2 text-center">
+									<button
+										class="btn btn-xs bg-special hover:bg-special/80 text-textPrimary border-special/50"
+									>
+										Hire
+									</button>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			</div>
 		</div>
 	</div>

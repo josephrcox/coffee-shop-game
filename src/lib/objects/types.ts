@@ -248,7 +248,7 @@ export const possibleMenuItems: menuItem[] = [
 		price: 3,
 		complexity: 2,
 		demand: 100, // Baseline
-		default: true,
+		default: false,
 		requires: [Equipment.DRIP_COFFEE_MACHINE],
 		marketPrice: 3,
 	},

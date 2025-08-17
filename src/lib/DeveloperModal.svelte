@@ -109,6 +109,16 @@
 		<div
 			class="modal-action pt-4 border-t border-warning/50 flex-shrink-0 gap-2"
 		>
+			<!-- button to clear local storage and refresh the page -->
+			<button
+				class="btn bg-error/80 hover:bg-error text-textPrimary border-error/50"
+				on:click={() => {
+					localStorage.clear();
+					location.reload();
+				}}
+			>
+				🗑️ Clear Local Storage
+			</button>
 			<button
 				class="btn bg-error/80 hover:bg-error text-textPrimary border-error/50"
 				on:click={resetGame}

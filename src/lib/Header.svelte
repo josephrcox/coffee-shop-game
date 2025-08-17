@@ -33,6 +33,7 @@
 	import StaffDetailModal from './StaffDetailModal.svelte';
 	import PriceAdjustmentModal from './PriceAdjustmentModal.svelte';
 	import Pill from './Pill.svelte';
+	import { tutorial } from './tutorial';
 
 	onMount(() => {
 		start();
@@ -170,7 +171,7 @@
 		? 'bg-error/40 text-textPrimary border-interactive'
 		: 'bg-cardBackground/80 text-textPrimary'} px-8 py-4 h-fit shadow-2xl border-b-2 border-info/30"
 >
-	<div class="flex flex-col gap-2">
+	<div class="flex flex-col gap-2" data-nux-id="stats">
 		<span class="text-accent font-medium"
 			>Day: {Math.floor($databaseStore.tick / 1000)} ({Math.floor(
 				($databaseStore.tick % 1000) / 10,
@@ -239,6 +240,7 @@
 			<span class="font-semibold pb-2 text-accent">Staff</span>
 			<button
 				class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
+				data-nux-id="open-hiring"
 				on:click={() => {
 					$paused = true;
 					$showHiringModal = true;
@@ -316,6 +318,7 @@
 			<span class="font-semibold pb-2 text-accent">Inventory</span>
 			<button
 				class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
+				data-nux-id="open-shop"
 				on:click={() => {
 					$paused = true;
 					$showShopModal = true;
@@ -399,12 +402,13 @@
 			<span class="font-semibold pb-2 text-accent">Menu </span>
 			<button
 				class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
+				data-nux-id="open-menu"
 				on:click={() => {
 					$showMenuPage = true;
 					$paused = true;
 				}}
 			>
-				Add Item
+				Manage Menu
 			</button>
 		</div>
 		<div class="flex flex-col gap-1">
@@ -415,6 +419,9 @@
 						variant={'success'}
 						normalContent={`$${item.price.toFixed(2)}`}
 						hoverContent={'Adjust price'}
+						tooltip={!hasManager(Trait.FINANCIAL, $databaseStore)
+							? 'You need a financial manager to adjust prices'
+							: undefined}
 						disabled={!hasManager(Trait.FINANCIAL, $databaseStore)}
 						onClick={() => handlePriceAdjustment(item)}
 					/>
@@ -430,3 +437,12 @@
 <MenuManagement />
 <StaffDetailModal />
 <PriceAdjustmentModal />
+
+<style>
+	.rainbow {
+		animation: rainbow 1s ease-in-out infinite;
+	}
+
+	@keyframes rainbow {
+	}
+</style>

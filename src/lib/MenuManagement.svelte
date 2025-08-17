@@ -71,44 +71,59 @@
 	icon="🍽️"
 	onClose={() => ($showMenuPage = false)}
 >
-	<div slot="content" class="space-y-8">
+	<div slot="content" class="space-y-12">
 		<!-- Current Menu Section -->
 		{#if $databaseStore.menu.length > 0}
-			<div class="space-y-4">
-				<div class="flex items-center gap-3">
-					<div class="text-2xl">✨</div>
-					<h2 class="text-2xl font-bold text-success">Active Menu Items</h2>
+			<div>
+				<div class="flex items-center gap-2 mb-3">
+					<div class="text-lg">✨</div>
+					<h2 class="text-lg font-bold text-success">Active Menu Items</h2>
 				</div>
-				<div
-					class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-				>
-					{#each $databaseStore.menu as menuItem}
-						<div
-							class="bg-gradient-to-br from-success/20 to-success/10 border-2 border-success/40 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300"
-						>
-							<div class="flex items-center justify-between mb-3">
-								<h3 class="font-bold text-textPrimary">{menuItem.name}</h3>
-								<button
-									class="btn btn-sm btn-circle bg-error hover:bg-error/80 text-textPrimary border-error/50"
-									on:click={() => {
-										$databaseStore.menu = $databaseStore.menu.filter(
-											(item) => item.name !== menuItem.name,
-										);
-									}}
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-borderColor/30">
+								<th class="text-left py-2 px-2 font-medium text-textSecondary"
+									>Item</th
 								>
-									✕
-								</button>
-							</div>
-							<div class="flex items-center justify-between">
-								<div
-									class="bg-success/80 text-textPrimary px-3 py-1 rounded-full font-bold"
+								<th class="text-center py-2 px-2 font-medium text-textSecondary"
+									>Price</th
 								>
-									${menuItem.price}
-								</div>
-								<div class="text-success text-xl">✓</div>
-							</div>
-						</div>
-					{/each}
+								<th
+									class="text-center py-2 px-2 font-medium text-textSecondary w-24"
+									>Action</th
+								>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-borderColor/20">
+							{#each $databaseStore.menu as menuItem}
+								<tr class="hover:bg-mainBackground/30 transition-colors">
+									<td class="py-2 px-2 font-medium text-textPrimary"
+										>{menuItem.name}</td
+									>
+									<td class="py-2 px-2 text-center">
+										<span
+											class="bg-success/80 text-textPrimary px-3 py-1 rounded-full font-bold text-xs"
+										>
+											${menuItem.price}
+										</span>
+									</td>
+									<td class="py-2 px-2 text-center w-24">
+										<button
+											class="btn btn-xs bg-error hover:bg-error/80 text-textPrimary border-error/50 w-28"
+											on:click={() => {
+												$databaseStore.menu = $databaseStore.menu.filter(
+													(item) => item.name !== menuItem.name,
+												);
+											}}
+										>
+											Remove
+										</button>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
 				</div>
 			</div>
 		{:else}
@@ -127,127 +142,155 @@
 
 		<!-- Available Items Section -->
 		{#if availableItems.length > 0}
-			<div class="space-y-4">
-				<div class="flex items-center gap-3">
-					<div class="text-2xl">🎯</div>
-					<h2 class="text-2xl font-bold text-accent">Available Recipes</h2>
+			<div>
+				<div class="flex items-center gap-2 mb-3">
+					<div class="text-lg">🎯</div>
+					<h2 class="text-lg font-bold text-accent">Available Recipes</h2>
 				</div>
-				<div
-					class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-				>
-					{#each availableItems as item}
-						{@const missingIngredients = Object.entries(
-							item.ingredients,
-						).filter(([ingredient, quantity]) => {
-							const inventoryItem = $databaseStore.inventory.find(
-								(inv) => inv.name === ingredient,
-							);
-							return !inventoryItem || inventoryItem.quantity < quantity;
-						})}
-
-						<div
-							class="bg-gradient-to-br from-cardBackground to-modalBackground border-2 border-interactive/40 rounded-xl p-4 flex flex-col justify-between shadow-lg hover:shadow-xl transition-all duration-300 hover:border-interactive/60"
-						>
-							<div class="flex items-center justify-between mb-3">
-								<h3 class="font-bold text-textPrimary">{item.name}</h3>
-								<div
-									class="bg-accent/80 text-mainBackground px-3 py-1 rounded-full font-bold"
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-borderColor/30">
+								<th class="text-left py-2 px-2 font-medium text-textSecondary"
+									>Item</th
 								>
-									${item.price}
-								</div>
-							</div>
+								<th class="text-center py-2 px-2 font-medium text-textSecondary"
+									>Price</th
+								>
+								<th class="text-center py-2 px-2 font-medium text-textSecondary"
+									>Ingredients Status</th
+								>
+								<th
+									class="text-center py-2 px-2 font-medium text-textSecondary w-24"
+									>Action</th
+								>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-borderColor/20">
+							{#each availableItems as item}
+								{@const missingIngredients = Object.entries(
+									item.ingredients,
+								).filter(([ingredient, quantity]) => {
+									const inventoryItem = $databaseStore.inventory.find(
+										(inv) => inv.name === ingredient,
+									);
+									return !inventoryItem || inventoryItem.quantity < quantity;
+								})}
 
-							{#if missingIngredients.length > 0}
-								<div class="mb-3 space-y-1">
-									<div class="text-xs text-warning font-medium">
-										Need ingredients:
-									</div>
-									{#each missingIngredients.slice(0, 2) as [ingredient, quantity]}
-										<div class="text-xs text-textSecondary">
-											• {ingredient} ({quantity})
-										</div>
-									{/each}
-									{#if missingIngredients.length > 2}
-										<div class="text-xs text-textSecondary">
-											• +{missingIngredients.length - 2} more...
-										</div>
-									{/if}
-								</div>
-							{/if}
-
-							<button
-								class="btn w-full bg-special hover:bg-special/80 text-textPrimary border-special/50 gap-2"
-								on:click={() => {
-									$databaseStore.menu = [...$databaseStore.menu, item];
-								}}
-							>
-								<div class="text-lg">+</div>
-								Add to Menu
-							</button>
-						</div>
-					{/each}
+								<tr
+									class="hover:bg-mainBackground/30 transition-colors"
+									data-nux-id={item.name === '☕️ Drip coffee' ? 'add-drip' : ''}
+								>
+									<td class="py-2 px-2 font-medium text-textPrimary"
+										>{item.name}</td
+									>
+									<td class="py-2 px-2 text-center">
+										<span
+											class="bg-accent/80 text-mainBackground px-3 py-1 rounded-full font-bold text-xs"
+										>
+											${item.price}
+										</span>
+									</td>
+									<td class="py-2 px-2 text-center">
+										{#if missingIngredients.length > 0}
+											<div class="text-xs text-warning">
+												⚠️ {missingIngredients.length} missing
+											</div>
+										{:else}
+											<span
+												class="bg-success/20 text-success px-2 py-1 rounded text-xs"
+												>✓ Ready</span
+											>
+										{/if}
+									</td>
+									<td class="py-2 px-2 text-center w-32">
+										<button
+											class="btn btn-xs bg-special hover:bg-special/80 text-textPrimary border-special/50 w-26"
+											on:click={() => {
+												$databaseStore.menu = [...$databaseStore.menu, item];
+											}}
+										>
+											Add to Menu
+										</button>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
 				</div>
 			</div>
 		{/if}
 
 		<!-- Locked Items Section -->
 		{#if lockedItems.length > 0}
-			<div class="space-y-4">
-				<div class="flex items-center gap-3">
-					<div class="text-2xl">🔒</div>
-					<h2 class="text-2xl font-bold text-textSecondary">Locked Recipes</h2>
+			<div>
+				<div class="flex items-center gap-2 mb-3">
+					<div class="text-lg">🔒</div>
+					<h2 class="text-lg font-bold text-textSecondary">Locked Recipes</h2>
 				</div>
-				<div
-					class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-				>
-					{#each lockedItems as item}
-						{@const missingEquipment = item.requires
-							? item.requires.filter(
-									(equipment) =>
-										!$databaseStore.ownedEquipment.some(
-											(e) => e.name === equipment,
-										),
-								)
-							: []}
-
-						<div
-							class="bg-gradient-to-br from-borderColor/20 to-borderColor/10 border-2 border-borderColor/40 rounded-xl p-4 flex flex-col justify-between shadow-lg opacity-60"
-						>
-							<div class="flex items-center justify-between mb-3">
-								<h3 class="font-bold text-textSecondary">{item.name}</h3>
-								<div
-									class="bg-borderColor text-textSecondary px-3 py-1 rounded-full font-bold"
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-borderColor/30">
+								<th class="text-left py-2 px-2 font-medium text-textSecondary"
+									>Item</th
 								>
-									${item.price}
-								</div>
-							</div>
+								<th class="text-center py-2 px-2 font-medium text-textSecondary"
+									>Price</th
+								>
+								<th class="text-left py-2 px-2 font-medium text-textSecondary"
+									>Missing Equipment</th
+								>
+								<th
+									class="text-center py-2 px-2 font-medium text-textSecondary w-28"
+									>Status</th
+								>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-borderColor/20">
+							{#each lockedItems as item}
+								{@const missingEquipment = item.requires
+									? item.requires.filter(
+											(equipment) =>
+												!$databaseStore.ownedEquipment.some(
+													(e) => e.name === equipment,
+												),
+										)
+									: []}
 
-							{#if missingEquipment.length > 0}
-								<div class="mb-3 space-y-1">
-									<div class="text-xs text-error font-medium">
-										Missing equipment:
-									</div>
-									{#each missingEquipment.slice(0, 2) as equipment}
-										<div class="text-xs text-textSecondary">
-											• {equipment}
-										</div>
-									{/each}
-									{#if missingEquipment.length > 2}
-										<div class="text-xs text-textSecondary">
-											• +{missingEquipment.length - 2} more...
-										</div>
-									{/if}
-								</div>
-							{/if}
-
-							<div
-								class="btn w-full bg-borderColor/50 text-textSecondary border-borderColor/50 cursor-not-allowed gap-2"
-							>
-								<div class="text-lg">🔒</div>
-								Equipment Needed
-							</div>
-						</div>
-					{/each}
+								<tr
+									class="hover:bg-mainBackground/30 transition-colors opacity-60"
+								>
+									<td class="py-2 px-2 font-medium text-textSecondary"
+										>{item.name}</td
+									>
+									<td class="py-2 px-2 text-center">
+										<span
+											class="bg-borderColor text-textSecondary px-3 py-1 rounded-full font-bold text-xs"
+										>
+											${item.price}
+										</span>
+									</td>
+									<td class="py-2 px-2 text-textSecondary">
+										{#if missingEquipment.length > 0}
+											<div class="text-xs">
+												{missingEquipment.slice(0, 3).join(', ')}
+												{#if missingEquipment.length > 3}
+													+{missingEquipment.length - 3} more
+												{/if}
+											</div>
+										{/if}
+									</td>
+									<td class="py-2 px-2 text-center w-24">
+										<span
+											class="bg-borderColor/50 text-textSecondary px-2 py-1 rounded text-xs w-24 inline-block"
+											>🔒 Locked</span
+										>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
 				</div>
 			</div>
 		{/if}
