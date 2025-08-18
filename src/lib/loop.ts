@@ -20,10 +20,20 @@ import type { db, quest } from './objects/types';
 import { quests, Trait } from './objects/types';
 
 let intervalId: NodeJS.Timeout | null = null;
+let musicInitialized = false;
 
 export function gameLoop() {
 	if (get(showEndOfDay)) return;
 	if (get(paused)) return;
+
+	// Initialize background music on first game tick
+	if (!musicInitialized) {
+		import('./store').then(({ initializeBackgroundMusic }) => {
+			initializeBackgroundMusic();
+			musicInitialized = true;
+		});
+	}
+
 	let db = get(databaseStore);
 	db.tick += 1;
 
@@ -204,6 +214,10 @@ export function gameLoop() {
 			!q.showingCompletion
 		) {
 			q.showingCompletion = true;
+			// play ding sound
+			const ding = new Audio('/ding.mp3');
+			ding.volume = 0.5;
+			ding.play();
 			showQuestConfetti.set(true);
 			// Track when quest completion started (safer than setTimeout)
 			if (!q.completionStartTick) {

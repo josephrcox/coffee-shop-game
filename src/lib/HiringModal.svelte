@@ -24,15 +24,87 @@
 	icon="👥"
 	onClose={() => ($showHiringModal = false)}
 >
-	<div slot="headerExtra" class="text-right" data-nux-id="hiring-intro">
+	<div slot="headerExtra" class="text-right">
 		<div class="text-sm text-textSecondary">Current Staff</div>
 		<div class="text-xl font-bold text-interactive">
 			{$databaseStore.staff.length}
 		</div>
 	</div>
 
-	<div slot="content" class="space-y-8">
+	<div slot="content" class="space-y-8" data-nux-id="hiring-intro">
 		<!-- Managers Section -->
+
+		<!-- Employees Section -->
+		<div>
+			<div class="flex items-center gap-2 mb-3">
+				<div class="text-lg">🎯</div>
+				<h2 class="text-lg font-bold text-lightAccent">Available Employees</h2>
+			</div>
+			<p class="text-sm text-textSecondary mb-4">
+				High XP employees want to work on more complex orders, but they move
+				much faster overall.
+			</p>
+			<div class="overflow-x-auto">
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="border-b border-borderColor/30">
+							<th class="text-left py-2 px-2 font-medium text-textSecondary"
+								>Name</th
+							>
+							<th class="text-center py-2 px-2 font-medium text-textSecondary"
+								>Experience</th
+							>
+							<th class="text-center py-2 px-2 font-medium text-textSecondary"
+								>Daily Wage</th
+							>
+							<th class="text-center py-2 px-2 font-medium text-textSecondary"
+								>Happiness</th
+							>
+							<th class="text-center py-2 px-2 font-medium text-textSecondary"
+								>Action</th
+							>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-borderColor/20">
+						{#each availableEmployees as employee}
+							<tr
+								class="hover:bg-mainBackground/30 transition-colors cursor-pointer"
+								on:click={() => {
+									$databaseStore.staff.push(employee);
+									availableEmployees = availableEmployees.filter(
+										(e) => e.name !== employee.name,
+									);
+								}}
+							>
+								<td class="py-2 px-2 font-medium text-textPrimary"
+									>{employee.name}</td
+								>
+								<td class="py-2 px-2 text-center">
+									<span
+										class="bg-success/80 text-textPrimary text-xs font-medium px-2 py-1 rounded-full"
+									>
+										{employee.experience}xp
+									</span>
+								</td>
+								<td class="py-2 px-2 text-center font-bold text-warning"
+									>${employee.dailyWage}/day</td
+								>
+								<td class="py-2 px-2 text-center text-lightAccent"
+									>{getHappinessEmoji(employee.happiness, true)}</td
+								>
+								<td class="py-2 px-2 text-center">
+									<button
+										class="btn btn-xs bg-special hover:bg-special/80 text-textPrimary border-special/50"
+									>
+										Hire
+									</button>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</div>
 		<div>
 			<div class="flex items-center gap-2 mb-3">
 				<div class="text-lg">👔</div>
@@ -95,78 +167,6 @@
 								>
 								<td class="py-2 px-2 text-center text-lightAccent"
 									>{getHappinessEmoji(manager.happiness, true)}</td
-								>
-								<td class="py-2 px-2 text-center">
-									<button
-										class="btn btn-xs bg-special hover:bg-special/80 text-textPrimary border-special/50"
-									>
-										Hire
-									</button>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-		</div>
-
-		<!-- Employees Section -->
-		<div>
-			<div class="flex items-center gap-2 mb-3">
-				<div class="text-lg">🎯</div>
-				<h2 class="text-lg font-bold text-lightAccent">Available Employees</h2>
-			</div>
-			<p class="text-sm text-textSecondary mb-4">
-				High XP employees want to work on more complex orders, but they move
-				much faster overall.
-			</p>
-			<div class="overflow-x-auto">
-				<table class="w-full text-sm">
-					<thead>
-						<tr class="border-b border-borderColor/30">
-							<th class="text-left py-2 px-2 font-medium text-textSecondary"
-								>Name</th
-							>
-							<th class="text-center py-2 px-2 font-medium text-textSecondary"
-								>Experience</th
-							>
-							<th class="text-center py-2 px-2 font-medium text-textSecondary"
-								>Daily Wage</th
-							>
-							<th class="text-center py-2 px-2 font-medium text-textSecondary"
-								>Happiness</th
-							>
-							<th class="text-center py-2 px-2 font-medium text-textSecondary"
-								>Action</th
-							>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-borderColor/20">
-						{#each availableEmployees as employee}
-							<tr
-								class="hover:bg-mainBackground/30 transition-colors cursor-pointer"
-								on:click={() => {
-									$databaseStore.staff.push(employee);
-									availableEmployees = availableEmployees.filter(
-										(e) => e.name !== employee.name,
-									);
-								}}
-							>
-								<td class="py-2 px-2 font-medium text-textPrimary"
-									>{employee.name}</td
-								>
-								<td class="py-2 px-2 text-center">
-									<span
-										class="bg-success/80 text-textPrimary text-xs font-medium px-2 py-1 rounded-full"
-									>
-										{employee.experience}xp
-									</span>
-								</td>
-								<td class="py-2 px-2 text-center font-bold text-warning"
-									>${employee.dailyWage}/day</td
-								>
-								<td class="py-2 px-2 text-center text-lightAccent"
-									>{getHappinessEmoji(employee.happiness, true)}</td
 								>
 								<td class="py-2 px-2 text-center">
 									<button

@@ -10,6 +10,8 @@
 	} from './store';
 	import type { menuItem } from './objects/types';
 	import { confetti } from '@neoconfetti/svelte';
+	import { slide, fade, scale } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 
 	function groupItems(items: menuItem[]) {
 		if (!items) return [];
@@ -23,34 +25,53 @@
 		}
 		return Array.from(grouped.values());
 	}
+
+	function deltaBadgeClass(delta: number): string {
+		if (delta > 0) return 'bg-success/20 text-success';
+		if (delta < 0) return 'bg-error/20 text-error';
+		return 'bg-borderColor/40 text-textSecondary';
+	}
 </script>
 
 <div
-	class="flex flex-col gap-4 p-8 bg-mainBackground text-textPrimary max-h-[65vh] overflow-y-clip"
+	class="relative flex flex-col pl-8 pt-4 pb-4 pr-4 bg-mainBackground text-textPrimary"
 	data-nux-id="orders-list"
 >
 	<div class="flex flex-row justify-between items-start">
-		<span class="text-2xl text-accent font-semibold" data-nux-id="orders-header"
-			>Orders <span class="text-xs text-textSecondary"
-				>({$databaseStore.orders.filter((order) => order.items.length > 0)
-					.length})</span
-			></span
+		<span
+			class="text-[64px] text-accent font-semibold"
+			data-nux-id="orders-header">Orders</span
 		>
-		<!-- svelte-ignore a11y-no-static-element-interactions -->
-		{#if $currentTip}
-			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<div
-				class="bg-warning/30 border border-warning/60 rounded-lg p-2 cursor-pointer backdrop-blur-sm"
-				on:click={() => currentTip.set('')}
-			>
-				<p class="text-sm text-warning">{$currentTip}</p>
-			</div>
-		{/if}
 	</div>
-	{#each $databaseStore.orders as order}
-		{#if order.items && order.items.length > 0}
+	<!-- Fixed trends (not affecting layout) -->
+
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	{#if $currentTip}
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<div
+			in:slide={{ duration: 500, easing: quintOut, axis: 'y' }}
+			out:slide={{ duration: 300, easing: quintOut, axis: 'y' }}
+			class="bg-error border border-warning/60 rounded-lg p-2 z-50 cursor-pointer backdrop-blur-sm fixed bottom-4 left-4"
+			on:click={() => currentTip.set('')}
+		>
+			<p class="text-sm text-white">
+				{$currentTip}
+				<br />
+				<span class="text-xs text-white underline"> Click to dismiss </span>
+			</p>
+		</div>
+	{/if}
+</div>
+
+<div class="flex-row flex overflow-y-clip">
+	<div>
+		{#each $databaseStore.orders
+			.filter((order) => order.items && order.items.length > 0)
+			.slice(0, 10) as order, index (order.id)}
 			<div
-				class="flex flex-row gap-1 items-center bg-cardBackground/40 p-3 rounded-lg border-l-4 border-info/60 backdrop-blur-sm shadow-lg"
+				in:slide={{ duration: 400, easing: quintOut, delay: index * 100 }}
+				out:slide={{ duration: 300, easing: quintOut }}
+				class="flex flex-row gap-1 items-center p-3 pl-4 ml-8 mb-4 w-fit pr-8 duration-200 border-l-2 backdrop-blur-sm shadow-lg"
 			>
 				<span class="text-textPrimary">{order.customer} wants</span>
 				{#each groupItems(order.originalItems || order.items) as groupedItem, i}
@@ -65,7 +86,8 @@
 
 				{#if $databaseStore.staff.find((employee) => employee.currentOrder === order.id)?.name}
 					<span
-						class="text-sm bg-success/70 text-textPrimary px-2 ml-2 rounded-md"
+						in:fade={{ duration: 300, delay: 100 }}
+						class="text-sm bg-success/70 text-textPrimary px-2 ml-2 rounded-md transition-all duration-200"
 					>
 						{$databaseStore.staff.find(
 							(employee) => employee.currentOrder === order.id,
@@ -80,13 +102,68 @@
 					</span>
 				{/if}
 			</div>
+		{/each}
+
+		{#if $databaseStore.orders.filter((order) => order.items && order.items.length > 0).length > 10}
+			<div class="text-sm text-gray-500 mt-2 text-center">
+				{$databaseStore.orders.filter(
+					(order) => order.items && order.items.length > 0,
+				).length - 10} more orders...
+			</div>
 		{/if}
-	{/each}
+	</div>
+	<div
+		class="flex-1 pr-8 flex flex-col items-end gap-1 pointer-events-none text-right"
+	>
+		<div class="flex flex-col items-start gap-1 bg-gray-200 p-3">
+			<div class="text-xs">Today vs Yesterday</div>
+			<div class="flex flex-row items-center gap-2">
+				<span class="text-sm">{`$${$databaseStore.stats.profitToday}`}</span>
+				<span
+					class={'text-xs px-1.5 rounded-md ' +
+						deltaBadgeClass(
+							$databaseStore.stats.profitToday -
+								$databaseStore.stats.profitYesterday,
+						)}
+				>
+					{$databaseStore.stats.profitToday -
+						$databaseStore.stats.profitYesterday >
+					0
+						? `+${$databaseStore.stats.profitToday - $databaseStore.stats.profitYesterday}`
+						: $databaseStore.stats.profitToday -
+							$databaseStore.stats.profitYesterday}
+				</span>
+			</div>
+			<div class="flex flex-row items-center gap-2">
+				<span class="text-sm"
+					>Orders {`${$databaseStore.stats.ordersToday}`}</span
+				>
+				<span
+					class={'text-xs px-1.5 rounded-md ' +
+						deltaBadgeClass(
+							$databaseStore.stats.ordersToday -
+								$databaseStore.stats.ordersYesterday,
+						)}
+				>
+					{$databaseStore.stats.ordersToday -
+						$databaseStore.stats.ordersYesterday >
+					0
+						? `+${$databaseStore.stats.ordersToday - $databaseStore.stats.ordersYesterday}`
+						: $databaseStore.stats.ordersToday -
+							$databaseStore.stats.ordersYesterday}
+				</span>
+			</div>
+			<div class="text-xs">
+				Total orders: {$databaseStore.stats.totalOrders}
+			</div>
+		</div>
+	</div>
 </div>
 
 {#if $databaseStore.quests.find((quest) => quest.showingCompletion) || ($databaseStore.quests.filter((quest) => !quest.completed).length > 0 && !$paused)}
 	<div class="flex flex-row gap-2 fixed bottom-8 right-8 z-50">
 		<div
+			in:fade={{ duration: 400, delay: 100 }}
 			class="bg-cardBackground/90 backdrop-blur-md rounded-lg p-4 shadow-2xl border border-info/60"
 		>
 			<!-- Show completed quest if one is being shown -->

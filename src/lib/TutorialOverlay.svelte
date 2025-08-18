@@ -18,6 +18,7 @@
 		showPriceAdjustmentModal,
 		showQuestConfetti,
 		paused,
+		playerName,
 	} from './store';
 	import { get } from 'svelte/store';
 	import { Ingredient, MenuItem } from './objects/types';
@@ -30,6 +31,7 @@
 	let initialInventoryCount: number | null = null;
 	let showWelcome = false;
 	let welcomeShown = false;
+	let playerNameInput = '';
 
 	// Padded highlight rectangle
 	let highlightLeft = 0;
@@ -154,6 +156,14 @@
 		tutorial.update((t) => ({ ...t, step: t.step + 1 }));
 	}
 
+	function startTutorial() {
+		if (playerNameInput.trim()) {
+			playerName.set(playerNameInput.trim());
+			showWelcome = false;
+			nextStep();
+		}
+	}
+
 	function closeAllModals(andUnpause: boolean = true) {
 		try {
 			showDeveloperModal.set(false);
@@ -177,7 +187,7 @@
 				showWelcome = true;
 				welcomeShown = true;
 			}
-			if (t.active && t.step === 3 && initialInventoryCount === null) {
+			if (t.active && t.step === 4 && initialInventoryCount === null) {
 				const db = get(databaseStore);
 				initialInventoryCount = db.inventory.reduce(
 					(sum, i) => sum + (i?.quantity || 0),
@@ -185,7 +195,7 @@
 				);
 			}
 			// Auto-unpause when reaching orders-list step
-			if (t.active && t.step === 4) {
+			if (t.active && t.step === 5) {
 				paused.set(false);
 			}
 			updateRect();
@@ -195,15 +205,15 @@
 		const unsubDb = databaseStore.subscribe((db) => {
 			const t = get(tutorial);
 			if (!t.active) return;
-			// Step 1 completion: add any menu item
-			if (t.step === 1) {
+			// Step 2 completion: add any menu item
+			if (t.step === 2) {
 				if (Array.isArray(db.menu) && db.menu.length > 0) {
 					nextStep();
 					closeAllModals(true);
 				}
 			}
-			// Step 3 completion: buy any ingredient (detect inventory count increase)
-			if (t.step === 3) {
+			// Step 4 completion: buy any ingredient (detect inventory count increase)
+			if (t.step === 4) {
 				const totalQty = db.inventory.reduce(
 					(sum, i) => sum + (i?.quantity || 0),
 					0,
@@ -217,9 +227,9 @@
 					initialInventoryCount = null;
 				}
 			}
-			// Step 4: orders incoming
-			if (t.step === 4) {
-				if (db.orders.length > 2) {
+			// Step 5: orders incoming
+			if (t.step === 5) {
+				if (db.orders.filter((order) => order.completion >= 100).length > 3) {
 					nextStep();
 					closeAllModals(true);
 				}
@@ -227,19 +237,19 @@
 		});
 		const unsubShop = showShopModal.subscribe((open) => {
 			const t = get(tutorial);
-			if (t.active && t.step === 2 && open) {
+			if (t.active && t.step === 3 && open) {
 				nextStep();
 			}
 		});
 		const unsubMenu = showMenuPage.subscribe((open) => {
 			const t = get(tutorial);
-			if (t.active && t.step === 0 && open) {
+			if (t.active && t.step === 1 && open) {
 				nextStep();
 			}
 		});
 		const unsubHiring = showHiringModal.subscribe((open) => {
 			const t = get(tutorial);
-			if (t.active && t.step === 6 && open) {
+			if (t.active && t.step === 7 && open) {
 				nextStep();
 			}
 		});
@@ -248,15 +258,15 @@
 		const hadUiState = !!localStorage.getItem('the-grind-ui');
 		const tNow = get(tutorial);
 		if (hadUiState && tNow.active && !showWelcome) {
-			if (tNow.step === 0) {
+			if (tNow.step === 1) {
 				paused.set(true);
 				showMenuPage.set(true);
 			}
-			if (tNow.step === 2 || tNow.step === 3) {
+			if (tNow.step === 3 || tNow.step === 4) {
 				paused.set(true);
 				showShopModal.set(true);
 			}
-			if (tNow.step === 6 || tNow.step === 7) {
+			if (tNow.step === 7 || tNow.step === 8) {
 				paused.set(true);
 				showHiringModal.set(true);
 			}
@@ -288,7 +298,7 @@
 		{/if}
 
 		<!-- Tooltip -->
-		{#if $tutorial.step <= 7 && !showWelcome}
+		{#if $tutorial.step <= 8 && !showWelcome}
 			<div
 				class="absolute max-w-xs bg-cardBackground/95 text-textPrimary border border-info/60 rounded-lg p-3 shadow-2xl pointer-events-auto"
 				style="left: {tooltipX}px; top: {tooltipY}px;"
@@ -303,7 +313,7 @@
 							<button
 								class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
 								on:click={() => {
-									if ($tutorial.step === 7) {
+									if ($tutorial.step === 8) {
 										closeAllModals(true);
 									}
 									nextStep();
@@ -328,19 +338,38 @@
 						{TUTORIAL_WELCOME_TITLE}
 					</div>
 					<p class="text-sm text-textSecondary mb-4">{TUTORIAL_WELCOME_BODY}</p>
-					<button
-						class="btn bg-interactive/80 text-textPrimary hover:bg-interactive border-interactive/50"
-						on:click={() => {
-							showWelcome = false;
-						}}
-					>
-						Start
-					</button>
+
+					<div class="flex-row flex gap-4 items-center justify-center">
+						<div class="">
+							<input
+								id="player-name"
+								type="text"
+								autofocus
+								bind:value={playerNameInput}
+								placeholder="Your name"
+								class="w-full px-3 py-2 bg-mainBackground border border-info/60 rounded-md text-textPrimary placeholder-textSecondary focus:outline-none focus:ring-2 focus:ring-info/60 focus:border-transparent"
+								on:keydown={(e) => {
+									if (e.key === 'Enter' && playerNameInput.trim()) {
+										startTutorial();
+									}
+								}}
+							/>
+						</div>
+
+						<button
+							class="btn {playerNameInput.trim()
+								? 'btn hover:bg-interactive border-interactive/50 bg-interactive/80 text-white'
+								: 'opacity-25 cursor-not-allowed '}  text-gray-800 disabled:cursor-not-allowed"
+							on:click={startTutorial}
+						>
+							Start
+						</button>
+					</div>
 				</div>
 			</div>
 		{/if}
 
-		{#if $tutorial.step === 8}
+		{#if $tutorial.step === 9}
 			<div
 				class="absolute inset-0 flex items-center justify-center pointer-events-auto"
 			>
@@ -351,7 +380,7 @@
 					<button
 						class="btn bg-success/80 text-textPrimary hover:bg-success border-success/50"
 						on:click={() =>
-							tutorial.set({ active: false, step: 9, completed: true })}
+							tutorial.set({ active: false, step: 10, completed: true })}
 					>
 						Finish
 					</button>

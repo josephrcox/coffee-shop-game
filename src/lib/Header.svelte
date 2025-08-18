@@ -123,6 +123,13 @@
 	}
 
 	let profitWithWages = 0;
+	let profitDelta = 0;
+
+	function getDeltaBadgeClass(delta: number): string {
+		if (delta > 0) return 'bg-success/20 text-success';
+		if (delta < 0) return 'bg-error/20 text-error';
+		return 'bg-borderColor/40 text-textSecondary';
+	}
 
 	$: {
 		const staffWages = $databaseStore.staff.reduce(
@@ -135,6 +142,7 @@
 		);
 		const totalWages = staffWages + managerWages;
 		profitWithWages = $databaseStore.stats.profitToday - totalWages;
+		profitDelta = profitWithWages - $databaseStore.stats.profitYesterday;
 	}
 
 	function handleInventoryClick(itemName: string) {
@@ -167,7 +175,7 @@
 </script>
 
 <div
-	class="grid grid-cols-5 gap-8 w-full {$paused
+	class="grid grid-cols-4 gap-8 w-full {$paused
 		? 'bg-error/40 text-textPrimary border-interactive'
 		: 'bg-cardBackground/80 text-textPrimary'} px-8 py-4 h-fit shadow-2xl border-b-2 border-info/30"
 >
@@ -180,17 +188,21 @@
 		<!-- Speed Controls -->
 		<div class="flex flex-row items-center gap-2">
 			<button
-				class="btn btn-xs {$paused
-					? 'bg-error/80 text-textPrimary hover:bg-error/90	'
-					: 'bg-cardBackground/60 text-textSecondary hover:bg-cardBackground/80'} border-none"
-				on:click={() => ($paused = true)}
+				class="btn btn-sm w-min pr-0 pl-0 {$paused
+					? 'bg-yellow-300 translate-y-[-2px] rotate-12 duration-200 hover:bg-yellow-600'
+					: 'bg-cardBackground/60 opacity-40 text-textSecondary hover:bg-cardBackground/80'} border-none"
+				on:click={() => ($paused = !$paused)}
 			>
-				Paused
+				<kbd class="kbd m-0 min-w-0"
+					><span class="font-bold underline">P</span>ause</kbd
+				>
 			</button>
+
 			<button
-				class="btn btn-xs {!$paused && $gameSpeed === 200
-					? 'bg-success/80 text-textPrimary hover:bg-success/90'
-					: 'bg-cardBackground/60 text-textSecondary hover:bg-cardBackground/80'} border-none"
+				class="btn btn-sm px-3 transition-colors duration-150 border-none {!$paused &&
+				$gameSpeed === 200
+					? 'bg-info/80 text-textPrimary hover:bg-info'
+					: 'bg-cardBackground/60 text-textSecondary hover:bg-cardBackground/80'}"
 				on:click={() => {
 					$paused = false;
 					$gameSpeed = 200;
@@ -199,9 +211,10 @@
 				Normal
 			</button>
 			<button
-				class="btn btn-xs {!$paused && $gameSpeed === 50
-					? 'bg-success/80 text-textPrimary hover:bg-success/90'
-					: 'bg-cardBackground/60 text-textSecondary hover:bg-cardBackground/80'} border-none"
+				class="btn btn-sm px-3 transition-colors duration-150 border-none {!$paused &&
+				$gameSpeed === 50
+					? 'bg-info/80 text-textPrimary hover:bg-info'
+					: 'bg-cardBackground/60 text-textSecondary hover:bg-cardBackground/80'}"
 				on:click={() => {
 					$paused = false;
 					$gameSpeed = 50;
@@ -210,28 +223,38 @@
 				Fast
 			</button>
 		</div>
+
 		<div class="flex flex-col">
-			<div class="flex flex-row gap-2">
-				<span>Cash: ${$databaseStore.cash}</span>
-				<span class={profitWithWages > 0 ? 'text-success' : 'text-interactive'}>
-					{profitWithWages > 0 ? '+' : ''}
-					{profitWithWages}
+			<div class="flex items-center gap-2">
+				<span class="text-textSecondary">Cash</span>
+				<span class="font-semibold text-accent">${$databaseStore.cash}</span>
+			</div>
+			<div class="flex items-center gap-2">
+				<span class="text-textSecondary text-xs">Profit (net)</span>
+				<span class="text-sm">{profitWithWages}</span>
+				<span
+					class={'text-xs px-1.5 rounded-md ' + getDeltaBadgeClass(profitDelta)}
+				>
+					{profitDelta > 0 ? `+${profitDelta}` : profitDelta}
+				</span>
+			</div>
+		</div>
+		<div class="flex flex-col">
+			<div class="flex items-center gap-2">
+				<span class="text-textSecondary">Popularity</span>
+				<span class="font-medium">{Math.floor($databaseStore.popularity)}%</span
+				>
+				<span
+					class={'text-xs px-1.5 rounded-md ' +
+						getDeltaBadgeClass($databaseStore.stats.popularityChange || 0)}
+				>
+					{($databaseStore.stats.popularityChange || 0) > 0
+						? `+${$databaseStore.stats.popularityChange}`
+						: $databaseStore.stats.popularityChange || 0}
 				</span>
 			</div>
 			<span class="text-textSecondary"
-				>Profit yesterday: {$databaseStore.stats.profitYesterday}</span
-			>
-		</div>
-		<div class="flex flex-col">
-			<span>Demand: {Math.floor($databaseStore.totalDemand)}</span>
-			<span class="">Popularity: {Math.floor($databaseStore.popularity)}%</span>
-		</div>
-
-		<div class="flex flex-col">
-			<span>Total orders: {$databaseStore.stats.totalOrders}</span>
-			<span>Orders today: {$databaseStore.stats.ordersToday}</span>
-			<span class="text-textSecondary"
-				>Orders yesterday: {$databaseStore.stats.ordersYesterday}</span
+				>Demand: {Math.floor($databaseStore.totalDemand)}</span
 			>
 		</div>
 	</div>
@@ -313,90 +336,93 @@
 			</div>
 		{/if}
 	</div>
-	<div class="flex flex-col">
-		<div class="flex flex-row gap-2">
-			<span class="font-semibold pb-2 text-accent">Inventory</span>
-			<button
-				class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
-				data-nux-id="open-shop"
-				on:click={() => {
-					$paused = true;
-					$showShopModal = true;
-				}}
-			>
-				Shop
-			</button>
-		</div>
-
-		{#each $databaseStore.inventory as item, index}
-			{@const purchasableItem = purchasableItems.find(
-				(p) => p.name === item.name,
-			)}
-			<div class="flex flex-row items-center justify-between pb-1">
-				<span>{item.name}</span>
-				<Pill
-					variant={item.quantity > 25 ? 'success' : 'warning'}
-					normalContent={item.quantity.toString()}
-					hoverContent={purchasableItem
-						? `${item.quantity} +($${purchasableItem.cost})`
-						: item.quantity.toString()}
-					onClick={() => handleInventoryClick(item.name)}
+	<div class="flex flex-col gap-4">
+		<div class="flex flex-col">
+			<div class="flex flex-row gap-2">
+				<span class="font-semibold pb-2 text-accent">Equipment</span>
+				<button
+					class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
+					on:click={() => {
+						$paused = true;
+						$showShopModal = true;
+					}}
 				>
-					<div slot="visual">
-						{#if getInventoryLines(item.quantity).count > 0}
-							<div class="flex flex-row gap-0.5 opacity-50">
-								{#each Array(getInventoryLines(item.quantity).count) as _}
-									<div
-										class="w-0.5 h-3 {getInventoryLines(item.quantity).color}"
-									></div>
-								{/each}
+					Shop
+				</button>
+			</div>
+			{#each $databaseStore.ownedEquipment as equipment, index}
+				<div class="flex flex-row items-center justify-between gap-1 w-full">
+					<span class="overflow-hidden text-ellipsis whitespace-nowrap">
+						{equipment.name}
+					</span>
+					<div
+						class="flex flex-row items-center gap-1 relative group"
+						title="Quality: {equipment.quality}%"
+					>
+						{#if equipment.quality >= 30}
+							<div
+								class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md"
+							>
+								Good
 							</div>
+						{:else}
+							<Pill
+								variant={equipment.quality > 0 ? 'error' : 'interactive'}
+								normalContent={equipment.quality > 0 ? 'Poor' : 'Repair'}
+								hoverContent="Repair (${Math.floor(equipment.cost / 8)})"
+								onClick={() => handleEquipmentRepair(equipment.name)}
+							/>
 						{/if}
 					</div>
-				</Pill>
-			</div>
-		{/each}
-	</div>
-	<div class="flex flex-col">
-		<div class="flex flex-row gap-2">
-			<span class="font-semibold pb-2 text-accent">Your Equipment</span>
-			<button
-				class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
-				on:click={() => {
-					$paused = true;
-					$showShopModal = true;
-				}}
-			>
-				Shop
-			</button>
-		</div>
-		{#each $databaseStore.ownedEquipment as equipment, index}
-			<div class="flex flex-row items-center justify-between gap-1 w-full">
-				<span class="overflow-hidden text-ellipsis whitespace-nowrap">
-					{equipment.name}
-				</span>
-				<div
-					class="flex flex-row items-center gap-1 relative group"
-					title="Quality: {equipment.quality}%"
-				>
-					{#if equipment.quality >= 30}
-						<div
-							class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md"
-						>
-							Good
-						</div>
-					{:else}
-						<Pill
-							variant={equipment.quality > 0 ? 'error' : 'interactive'}
-							normalContent={equipment.quality > 0 ? 'Poor' : 'Repair'}
-							hoverContent="Repair (${Math.floor(equipment.cost / 8)})"
-							onClick={() => handleEquipmentRepair(equipment.name)}
-						/>
-					{/if}
 				</div>
+			{/each}
+		</div>
+		<div class="flex flex-col">
+			<div class="flex flex-row gap-2">
+				<span class="font-semibold pb-2 text-accent">Inventory</span>
+				<button
+					class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
+					data-nux-id="open-shop"
+					on:click={() => {
+						$paused = true;
+						$showShopModal = true;
+					}}
+				>
+					Shop
+				</button>
 			</div>
-		{/each}
+
+			{#each $databaseStore.inventory as item, index}
+				{@const purchasableItem = purchasableItems.find(
+					(p) => p.name === item.name,
+				)}
+				<div class="flex flex-row items-center justify-between pb-1">
+					<span>{item.name}</span>
+					<Pill
+						variant={item.quantity > 25 ? 'success' : 'warning'}
+						normalContent={item.quantity.toString()}
+						hoverContent={purchasableItem
+							? `${item.quantity} +($${purchasableItem.cost})`
+							: item.quantity.toString()}
+						onClick={() => handleInventoryClick(item.name)}
+					>
+						<div slot="visual">
+							{#if getInventoryLines(item.quantity).count > 0}
+								<div class="flex flex-row gap-0.5 opacity-50">
+									{#each Array(getInventoryLines(item.quantity).count) as _}
+										<div
+											class="w-0.5 h-3 {getInventoryLines(item.quantity).color}"
+										></div>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					</Pill>
+				</div>
+			{/each}
+		</div>
 	</div>
+
 	<div class="flex flex-col">
 		<div class="flex flex-row gap-2">
 			<span class="font-semibold pb-2 text-accent">Menu </span>

@@ -4,6 +4,41 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom cursor */
+.custom-cursor {
+	position: fixed;
+	width: 48px;
+	height: 48px;
+	pointer-events: none;
+	z-index: 9999;
+	background-image: url('/cursor.png');
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+	transform: translate(-15px, -8px); /* Scale up and maintain positioning */
+	transform-origin: center; /* Ensure scaling happens from center */
+	transition: opacity 0.15s ease-out; /* Much faster transition */
+	transition: transform 0.15s ease-out; /* Much faster transition */
+	will-change: transform; /* Optimize for animations */
+}
+
+/* Cursor pointer state - smaller size */
+.custom-cursor.pointer {
+	opacity: 0.3;
+	/* rotate 10 degrees */
+	transform: translate(-15px, -8px) rotate(-20deg);
+}
+
+/* Hide system cursor when custom cursor is active */
+body.custom-cursor-active {
+	cursor: none !important;
+}
+
+/* Also hide cursor on the main game container */
+body.custom-cursor-active * {
+	cursor: none !important;
+}
+
 /* select none */
 * {
 	user-select: none;

@@ -1,4 +1,4 @@
-import { databaseStore, currentTip } from './store';
+import { databaseStore, currentTip, playerName } from './store';
 import { get } from 'svelte/store';
 import {
 	possibleMenuItems,
@@ -99,7 +99,7 @@ export function hasManager(trait: Trait, game: db): boolean {
 }
 
 export function startGame(game: db): db {
-	const name = 'You';
+	const name = get(playerName) || 'You';
 	if (name) {
 		const firstEmployee = {
 			name: name,
@@ -368,6 +368,18 @@ export function workOnOrder(order: order, game: db): db {
 				currentTip.set(
 					`${order.customer} got their order too slowly. Consider hiring more staff!`,
 				);
+				let rand = Math.random();
+				const mehSound =
+					rand < 0.25
+						? new Audio('/meh1.mp3')
+						: rand < 0.5
+						? new Audio('/meh2.wav')
+						: rand < 0.75
+						? new Audio('/meh3.mp3')
+						: new Audio('/meh4.wav');
+				mehSound.currentTime = 0;
+				mehSound.volume = 0.4;
+				mehSound.play();
 			}
 		} else {
 			const neutralChance = 0.05;
@@ -404,14 +416,14 @@ export function generateOrder(): order | null {
 				return false;
 			}
 		}
-		for (const ingredient in menuItem.ingredients) {
-			const requiredAmount =
-				menuItem.ingredients[ingredient as keyof typeof menuItem.ingredients];
-			const invItem = db.inventory.find((item) => item.name === ingredient);
-			if (!invItem || invItem.quantity < requiredAmount) {
-				return false;
-			}
-		}
+		// for (const ingredient in menuItem.ingredients) {
+		// 	const requiredAmount =
+		// 		menuItem.ingredients[ingredient as keyof typeof menuItem.ingredients];
+		// 	const invItem = db.inventory.find((item) => item.name === ingredient);
+		// 	if (!invItem || invItem.quantity < requiredAmount) {
+		// 		return false;
+		// 	}
+		// }
 		return true;
 	});
 

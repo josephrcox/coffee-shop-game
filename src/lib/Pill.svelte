@@ -32,7 +32,7 @@
 </script>
 
 {#if tooltip}
-	<div
+	<button
 		class="tooltip tooltip-content tooltip-secondary tooltip-left"
 		data-tip={tooltip}
 	>
@@ -40,9 +40,9 @@
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<!-- svelte-ignore a11y-mouse-events-have-key-events -->
 		<div
-			class="text-xs text-textPrimary px-1.5 rounded-md flex flex-row h-full items-center gap-1 transition-all duration-200 {getVariantClasses(
+			class="text-xs text-textPrimary cursor-pointer px-1.5 rounded-md flex flex-row h-full items-center gap-1 transition-all duration-200 {getVariantClasses(
 				variant,
-			)} {disabled ? 'cursor-not-allowed' : 'cursor-pointer'}"
+			)} {disabled ? 'cursor-not-allowed' : ''}"
 			on:mouseenter={() => (isHovered = true)}
 			on:mouseleave={() => (isHovered = false)}
 			on:click={!disabled ? handleClick : undefined}
@@ -58,15 +58,15 @@
 				<slot name="visual" />
 			{/if}
 		</div>
-	</div>
+	</button>
 {:else}
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-mouse-events-have-key-events -->
-	<div
-		class="text-xs text-textPrimary px-1.5 rounded-md flex flex-row h-full items-center gap-1 transition-all duration-200 {getVariantClasses(
+	<button
+		class="text-xs text-textPrimary px-1.5 cursor-pointer rounded-md flex flex-row h-full items-center gap-1 transition-all duration-200 {getVariantClasses(
 			variant,
-		)} {disabled ? 'cursor-not-allowed' : 'cursor-pointer'}"
+		)} {disabled ? 'cursor-not-allowed' : ''}"
 		on:mouseenter={() => (isHovered = true)}
 		on:mouseleave={() => (isHovered = false)}
 		on:click={!disabled ? handleClick : undefined}
@@ -81,5 +81,5 @@
 			</span>
 			<slot name="visual" />
 		{/if}
-	</div>
+	</button>
 {/if}

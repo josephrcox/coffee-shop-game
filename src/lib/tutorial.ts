@@ -2,7 +2,7 @@ import { writable } from 'svelte/store';
 
 type TutorialState = {
 	active: boolean;
-	step: number; // 0=open shop, 1=buy grounds, 2=open menu, 3=add drip, 4=watch orders
+	step: number; // 0=name input, 1=open menu, 2=add drip, 3=open shop, 4=buy grounds, 5=watch orders
 	completed: boolean;
 };
 
@@ -65,45 +65,51 @@ export type TutorialStep = {
 export const TUTORIAL_STEPS: TutorialStep[] = [
 	{
 		id: 0,
+		targetId: 'name-input',
+		message: 'Please enter your name to get started.',
+		manual: true,
+	},
+	{
+		id: 1,
 		targetId: 'open-menu',
 		message: 'First, we need to add an item to the menu. Click on Manage Menu.',
 	},
 	{
-		id: 1,
+		id: 2,
 		targetId: 'add-drip',
 		message: 'Add Drip Coffee. This is a simple beverage to get you started.',
 	},
 	{
-		id: 2,
+		id: 3,
 		targetId: 'open-shop',
 		message: 'Now, we need to buy coffee grounds. Click on Shop.',
 	},
 	{
-		id: 3,
+		id: 4,
 		targetId: 'buy-grounds',
 		message:
 			'Buy some Coffee Grounds. \n\nIn the shop, you can also buy equipment. We already have a Drip Coffee Machine, as you can see below.',
 	},
 	{
-		id: 4,
+		id: 5,
 		targetId: 'orders-header',
 		message:
 			"Now that you have your first item and some grounds, let's watch your first customers come in.",
 	},
 	{
-		id: 5,
+		id: 6,
 		targetId: 'stats',
 		message:
 			'Now that you have some customers, you have to keep an idea on your business health. \nPopularity and demand is vital for attracting more customers, while cash is vital for staying in business.',
 		manual: true,
 	},
 	{
-		id: 6,
+		id: 7,
 		targetId: 'open-hiring',
 		message: 'When things start to get busy, you can hire more staff.',
 	},
 	{
-		id: 7,
+		id: 8,
 		targetId: 'hiring-intro',
 		message:
 			'Here, you can hire employees & managers. \n\nEmployees will work on orders.\n\nManagers unlock new capabilities after your shop is more established.',
