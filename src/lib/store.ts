@@ -260,13 +260,13 @@ export const DEFAULT_CAFE_SETTINGS: cafeSetting[] = [
 			{
 				description: 'Some tables and benches',
 				cost: 2000,
-				vibeEffect: 0.05,
+				vibeEffect: 0.1,
 			},
 			{
 				description:
 					'The maximum number of tables & chairs, along with bar seating',
 				cost: 5000,
-				vibeEffect: 0.1,
+				vibeEffect: 0.25,
 			},
 		],
 		level: 0,
@@ -282,7 +282,7 @@ export const DEFAULT_CAFE_SETTINGS: cafeSetting[] = [
 			{
 				description: 'A bathroom with air fresheners & music',
 				cost: 500,
-				vibeEffect: 0.02,
+				vibeEffect: 0.2,
 			},
 		],
 		level: 0,
@@ -291,14 +291,14 @@ export const DEFAULT_CAFE_SETTINGS: cafeSetting[] = [
 
 export const DEFAULT_DB: db = {
 	tick: 1000,
-	cafeSettings: DEFAULT_CAFE_SETTINGS,
-	managers: [],
-	staff: [],
-	cash: 500,
-	orders: [],
 	popularity: 25, // 0-100
 	totalDemand: 0, // Starting with drip coffee baseline
 	vibe: 1,
+	cash: 100,
+	cafeSettings: DEFAULT_CAFE_SETTINGS,
+	managers: [],
+	staff: [],
+	orders: [],
 	inventory: [],
 	quests: quests,
 	menu: [],

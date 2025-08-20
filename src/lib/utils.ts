@@ -488,6 +488,11 @@ export function generateOrder(): order | null {
 		patienceRange = 1000 - patienceMin;
 	}
 
+	// Apply vibe effect to customer patience (1.0 is standard, >1.0 makes customers more patient, <1.0 less patient)
+	const basePatienceValue =
+		Math.floor(Math.random() * patienceRange) + patienceMin;
+	const vibeAdjustedPatience = Math.floor(basePatienceValue * db.vibe);
+
 	return {
 		id: db.orders.length + Date.now(), // More unique ID
 		customer: generateName(),
@@ -495,7 +500,7 @@ export function generateOrder(): order | null {
 		originalItems: [...orderItems],
 		completion: 0,
 		ticksToComplete: 0,
-		customerPatience: Math.floor(Math.random() * patienceRange) + patienceMin,
+		customerPatience: vibeAdjustedPatience,
 	};
 }
 

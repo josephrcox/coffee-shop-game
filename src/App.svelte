@@ -315,7 +315,7 @@
 							<div class="text-sm text-textPrimary flex flex-col gap-1 mt-2">
 								{#each allQuests.slice(0, 8) as quest}
 									<div
-										class="flex flex-row items-start gap-2 tooltip z-50 tooltip-top"
+										class="flex flex-row items-start gap-2 tooltip tooltip-top"
 										data-tip={`$${quest.reward.cash} + ${quest.reward.popularity} popularity`}
 									>
 										<div

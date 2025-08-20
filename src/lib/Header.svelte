@@ -45,6 +45,8 @@
 	let draggedIndex: number | null = null;
 	let draggedOverIndex: number | null = null;
 
+	let helpMenuOpen = false;
+
 	// Hover state for fire button
 	let hoveredEmployeeIndex: number | null = null;
 
@@ -172,13 +174,8 @@
 		? 'bg-error/40 text-textPrimary border-interactive'
 		: 'bg-cardBackground/80 text-textPrimary'} px-8 py-4 h-fit shadow-2xl border-b-2 border-info/30"
 >
-	<div class="flex flex-col gap-2" data-nux-id="stats">
-		<span class="text-accent font-medium"
-			>Day: {Math.floor($databaseStore.tick / 1000)} ({Math.floor(
-				($databaseStore.tick % 1000) / 10,
-			)}%)</span
-		>
-		<!-- Speed Controls -->
+	<!-- Game Controls & Stats Column (Left) -->
+	<div class="flex flex-col">
 		<div class="flex flex-row items-center gap-2">
 			<button
 				class="btn btn-sm w-min pr-0 pl-0 {$paused
@@ -216,18 +213,32 @@
 				Fast
 			</button>
 		</div>
+		<div class="flex items-center gap-2 mt-2">
+			<span class="text-textSecondary">Day</span>
+			<span class="font-medium"
+				>{Math.floor($databaseStore.tick / 1000)} ({Math.floor(
+					($databaseStore.tick % 1000) / 10,
+				)}%)</span
+			>
+		</div>
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<kbd
+			class="kbd kbd-sm w-fit bg-yellow-800 text-white cursor-pointer mt-2"
+			on:click={() => (helpMenuOpen = !helpMenuOpen)}
+		>
+			💡 Info
+		</kbd>
 
-		<div class="flex flex-col">
+		<!-- Stats Section -->
+		<div class="flex flex-col mt-2" data-nux-id="stats">
 			<div class="flex items-center gap-2">
 				<span class="text-textSecondary">Cash</span>
 				<span class="font-semibold">${$databaseStore.cash}</span>
 			</div>
 			<div class="flex items-center gap-2">
-				<span class="text-textSecondary text-xs">Profit</span>
+				<span class="text-textSecondary">Profit</span>
 				<span class="text-sm">{netProfitToday}</span>
 			</div>
-		</div>
-		<div class="flex flex-col">
 			<div class="flex items-center gap-2">
 				<span class="text-textSecondary">Popularity</span>
 				<span class="font-medium">{Math.floor($databaseStore.popularity)}%</span
@@ -248,10 +259,27 @@
 			</div>
 			<div class="flex flex-row items-center gap-2">
 				<span class="text-textSecondary">Vibe</span>
-				<span class="font-medium">{$databaseStore.vibe.toFixed(2)}</span>
+				<div class="flex items-center gap-0.5">
+					{#each Array(Math.floor($databaseStore.vibe)) as _}
+						<img
+							src="/star.svg"
+							alt="star"
+							class="w-4 h-4 brightness-0 invert"
+						/>
+					{/each}
+					{#if $databaseStore.vibe % 1 >= 0.5}
+						<img
+							src="/halfstar.svg"
+							alt="half star"
+							class="w-4 h-4 brightness-0 invert"
+						/>
+					{/if}
+				</div>
 			</div>
 		</div>
 	</div>
+
+	<!-- Staff Column -->
 	<div class="flex flex-col">
 		<div class="flex flex-row gap-2">
 			<span class="font-semibold pb-2 text-accent">Staff</span>
@@ -330,48 +358,50 @@
 			</div>
 		{/if}
 	</div>
-	<div class="flex flex-col gap-4">
-		<div class="flex flex-col">
-			<div class="flex flex-row gap-2">
-				<span class="font-semibold pb-2 text-accent">Equipment</span>
-				<button
-					class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
-					on:click={() => {
-						$paused = true;
-						$showShopModal = true;
-					}}
-				>
-					Shop
-				</button>
-			</div>
-			{#each $databaseStore.ownedEquipment as equipment, index}
-				<div class="flex flex-row items-center justify-between gap-1 w-full">
-					<span class="overflow-hidden text-ellipsis whitespace-nowrap">
-						{equipment.name}
-					</span>
-					<div
-						class="flex flex-row items-center gap-1 relative group"
-						title="Quality: {equipment.quality}%"
-					>
-						{#if equipment.quality >= 30}
-							<div
-								class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md"
-							>
-								Good
-							</div>
-						{:else}
-							<Pill
-								variant={equipment.quality > 0 ? 'error' : 'interactive'}
-								normalContent={equipment.quality > 0 ? 'Poor' : 'Repair'}
-								hoverContent="Repair (${Math.floor(equipment.cost / 8)})"
-								onClick={() => handleEquipmentRepair(equipment.name)}
-							/>
-						{/if}
-					</div>
-				</div>
-			{/each}
+
+	<!-- Equipment Column (Center) -->
+	<div class="flex flex-col">
+		<div class="flex flex-row gap-2">
+			<span class="font-semibold pb-2 text-accent">Equipment</span>
+			<button
+				class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
+				on:click={() => {
+					$paused = true;
+					$showShopModal = true;
+				}}
+			>
+				Shop
+			</button>
 		</div>
+		{#each $databaseStore.ownedEquipment as equipment, index}
+			<div class="flex flex-row items-center justify-between gap-1 w-full">
+				<span class="overflow-hidden text-ellipsis whitespace-nowrap">
+					{equipment.name}
+				</span>
+				<div
+					class="flex flex-row items-center gap-1 relative group"
+					title="Quality: {equipment.quality}%"
+				>
+					{#if equipment.quality >= 30}
+						<div
+							class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md"
+						>
+							Good
+						</div>
+					{:else}
+						<Pill
+							variant={equipment.quality > 0 ? 'error' : 'interactive'}
+							normalContent={equipment.quality > 0 ? 'Poor' : 'Repair'}
+							hoverContent="Repair (${Math.floor(equipment.cost / 8)})"
+							onClick={() => handleEquipmentRepair(equipment.name)}
+						/>
+					{/if}
+				</div>
+			</div>
+		{/each}
 	</div>
+
+	<!-- Inventory Column (Right) -->
 	<div class="flex flex-col">
 		<div class="flex flex-row gap-2">
 			<span class="font-semibold pb-2 text-accent">Inventory</span>
@@ -417,6 +447,75 @@
 		{/each}
 	</div>
 </div>
+
+{#if helpMenuOpen}
+	<dialog id="help_modal" class="modal modal-open modal-middle">
+		<div
+			class="modal-box bg-modalBackground/70 backdrop-blur-md min-w-[50vw] text-textPrimary flex flex-col border-2 shadow-2xl"
+		>
+			<!-- Header -->
+			<div class="flex flex-col justify-between mb-4 flex-shrink-0">
+				<h3 class="text-2xl font-bold text-textPrimary flex items-center gap-2">
+					💡 Info
+				</h3>
+				<p class="text-black bg-white rounded-lg p-4 text-center my-4">
+					All of these stats greatly impact your business performance. Improve
+					popularity & demand to get more customers, and improve vibe to make
+					those customers happier.
+					<br />
+					<br />
+					For example, if you have high popularity + high demand but low vibe, then
+					you will get tons of customers, but they will expect the fastest orders
+					ever as the café's environment is not very appealing.
+					<br />
+					<br />
+					You can also choose to keep your shop niche with only a couple menu items
+					and high popularity + vibe. This setup can be quite successful as fewer
+					menu items are easier to manage.
+					<br />
+					<br />
+					It's up to you!
+				</p>
+				<div class="flex flex-col gap-2">
+					<div>
+						<h4>Popularity</h4>
+						<ul class="list-disc list-inside ml-2">
+							<li>Changes based on order satisfaction.</li>
+							<li>
+								Impacts how patient customers are. The more popular, the higher
+								the expectations.
+							</li>
+						</ul>
+						<h4 class="mt-4">Demand</h4>
+						<ul class="list-disc list-inside ml-2">
+							<li>Increases as you add more menu items.</li>
+							<li>
+								Impacts how many customers you get. The more demand, the more
+								customers you get.
+							</li>
+						</ul>
+						<h4 class="mt-4">Vibe</h4>
+						<ul class="list-disc list-inside ml-2">
+							<li>Increases through Café customization upgrades.</li>
+							<li>
+								Affects how many orders you get, and greatly improves customer
+								patience!
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="flex flex-row justify-end">
+				<button
+					class="btn btn-md bg-success/80 w-fit text-textPrimary hover:bg-success border-success/50"
+					on:click={() => (helpMenuOpen = false)}
+				>
+					Got it!
+				</button>
+			</div>
+		</div>
+	</dialog>
+{/if}
 
 <!-- Modal Components -->
 <HiringModal />

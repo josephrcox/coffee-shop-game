@@ -28,11 +28,11 @@
 </script>
 
 <!-- Orders content only -->
-<div class="h-full bg-mainBackground text-textPrimary px-8 pt-4">
-	<span
-		class="text-[64px] text-accent font-semibold"
-		data-nux-id="orders-header">Orders</span
-	>
+<div
+	class="h-full bg-mainBackground text-textPrimary px-8 pt-4"
+	data-nux-id="orders-header"
+>
+	<span class="text-[64px] text-accent font-semibold">Orders</span>
 
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	{#if $currentTip}
@@ -57,7 +57,7 @@
 		<div
 			in:slide={{ duration: 400, easing: quintOut, delay: index * 100 }}
 			out:slide={{ duration: 300, easing: quintOut }}
-			class="flex flex-row gap-1 items-center p-3 pl-4 mb-4 w-fit pr-8 duration-200 border-l-2 backdrop-blur-sm shadow-lg"
+			class="flex text-lg flex-row gap-1 items-center p-3 pl-4 mb-4 w-fit pr-8 duration-200 border-l-2 backdrop-blur-sm shadow-lg"
 		>
 			{#if $databaseStore.staff.find((employee) => employee.currentOrder === order.id)?.name}
 				<span class="text-textPrimary">{order.customer} wants</span>
