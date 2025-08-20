@@ -66,8 +66,7 @@
 
 <FullscreenModal
 	show={$showMenuPage}
-	title="Menu Management"
-	subtitle="Craft your perfect menu"
+	title="Menu"
 	icon="🍽️"
 	onClose={() => ($showMenuPage = false)}
 >

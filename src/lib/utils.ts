@@ -12,6 +12,7 @@ import {
 	type manager,
 	Trait,
 } from './objects/types';
+import type { cafeSetting, cafeSettingLevel } from './objects/types';
 
 let randomFirstNames = [
 	'Alex',
@@ -813,4 +814,90 @@ export function autoRestockInventory(game: db): db {
 	});
 
 	return game;
+}
+
+// --- Café Settings helpers ---
+export function getCurrentCafeSettingLevel(
+	setting: cafeSetting,
+): cafeSettingLevel {
+	const levelIndex = Math.max(
+		0,
+		Math.min(setting.level, setting.levels.length - 1),
+	);
+	return setting.levels[levelIndex];
+}
+
+export function getNextCafeSettingLevel(
+	setting: cafeSetting,
+): cafeSettingLevel | null {
+	const nextIndex = setting.level + 1;
+	if (nextIndex >= setting.levels.length) return null;
+	return setting.levels[nextIndex];
+}
+
+export function canUpgradeCafeSetting(setting: cafeSetting, game: db): boolean {
+	const next = getNextCafeSettingLevel(setting);
+	if (!next) return false;
+	return game.cash >= next.cost;
+}
+
+export function applyCafeSettingLevelEffect(
+	db: db,
+	level: cafeSettingLevel,
+): db {
+	if (typeof (level as any).vibeEffect === 'number') {
+		db.vibe += (level as any).vibeEffect as number;
+	}
+	return db;
+}
+
+export function upgradeCafeSettingAtIndex(index: number): boolean {
+	let success = false;
+	databaseStore.update((db) => {
+		const setting = db.cafeSettings?.[index];
+		if (!setting) return db;
+		const nextIndex = setting.level + 1;
+		if (nextIndex >= setting.levels.length) return db;
+
+		const nextLevel = setting.levels[nextIndex];
+		if (db.cash < nextLevel.cost) return db;
+
+		// Deduct cost
+		db.cash -= nextLevel.cost;
+		db.stats.expensesToday += nextLevel.cost;
+
+		// Apply effect via general applier
+		const effected = applyCafeSettingLevelEffect(db, nextLevel);
+
+		// Update level
+		const updatedSetting = effected.cafeSettings?.[index];
+		if (updatedSetting) {
+			updatedSetting.level = nextIndex;
+		}
+
+		success = true;
+		return effected;
+	});
+	return success;
+}
+
+// --- Profit calculation helpers ---
+export function calculateTotalWages(game: db): number {
+	const staffWages = game.staff.reduce(
+		(sum, employee) => sum + employee.dailyWage,
+		0,
+	);
+	const managerWages = game.managers.reduce(
+		(sum, manager) => sum + manager.dailyWage,
+		0,
+	);
+	return staffWages + managerWages;
+}
+
+export function calculateNetProfitToday(game: db): number {
+	return game.stats.profitToday - calculateTotalWages(game);
+}
+
+export function calculateGrossProfitToday(game: db): number {
+	return game.stats.profitToday;
 }

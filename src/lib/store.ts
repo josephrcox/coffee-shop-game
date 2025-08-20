@@ -8,6 +8,7 @@ import {
 	type menuItem,
 	Ingredient,
 	Equipment,
+	type cafeSetting,
 } from './objects/types';
 import { calculateTotalDemand } from './utils';
 
@@ -247,14 +248,57 @@ export function resumeAudioContext() {
 	} catch {}
 }
 
+export const DEFAULT_CAFE_SETTINGS: cafeSetting[] = [
+	{
+		name: 'Seating',
+		levels: [
+			{
+				description: 'A couple of chairs',
+				cost: 0,
+				vibeEffect: 0,
+			},
+			{
+				description: 'Some tables and benches',
+				cost: 2000,
+				vibeEffect: 0.05,
+			},
+			{
+				description:
+					'The maximum number of tables & chairs, along with bar seating',
+				cost: 5000,
+				vibeEffect: 0.1,
+			},
+		],
+		level: 0,
+	},
+	{
+		name: 'Bathrooms',
+		levels: [
+			{
+				description: 'A basic bathroom',
+				cost: 0,
+				vibeEffect: 0,
+			},
+			{
+				description: 'A bathroom with air fresheners & music',
+				cost: 500,
+				vibeEffect: 0.02,
+			},
+		],
+		level: 0,
+	},
+];
+
 export const DEFAULT_DB: db = {
 	tick: 1000,
+	cafeSettings: DEFAULT_CAFE_SETTINGS,
 	managers: [],
 	staff: [],
 	cash: 500,
 	orders: [],
 	popularity: 25, // 0-100
 	totalDemand: 0, // Starting with drip coffee baseline
+	vibe: 1,
 	inventory: [],
 	quests: quests,
 	menu: [],
@@ -296,6 +340,23 @@ function migrateDatabase(loadedDb: any): db {
 	const migratedDb: db = {
 		...DEFAULT_DB,
 		...loadedDb,
+		// Ensure cafeSettings is a proper array and reattach default levels (with numeric vibeEffect)
+		cafeSettings: (() => {
+			const loadedArray: any[] = Array.isArray(loadedDb.cafeSettings)
+				? loadedDb.cafeSettings
+				: [];
+			return DEFAULT_DB.cafeSettings.map((def) => {
+				const match = loadedArray.find((s) => s && s.name === def.name);
+				return {
+					...def,
+					// keep default levels/effects, only carry over current level index if present
+					level:
+						typeof match?.level === 'number' && match.level >= 0
+							? Math.min(Math.max(0, match.level), def.levels.length - 1)
+							: def.level ?? 0,
+				};
+			});
+		})(),
 		// Ensure managers array exists
 		managers: loadedDb.managers || [],
 		// Ensure all stats fields exist

@@ -39,6 +39,16 @@ body.custom-cursor-active * {
 	cursor: none !important;
 }
 
+.tooltip::before {
+	max-width: 115px;
+	background: #fff;
+	color: #000;
+	padding: 3px;
+	border-radius: 5px;
+	font-size: 16px;
+	text-align: center;
+}
+
 /* select none */
 * {
 	user-select: none;

@@ -32,8 +32,21 @@ export enum MenuItem {
 	CHAI_LATTE = '🍵 Chai latte',
 }
 
+export type cafeSetting = {
+	name: string;
+	levels: cafeSettingLevel[];
+	level: number; // index of levels[]
+};
+
+export type cafeSettingLevel = {
+	description: string;
+	cost: number;
+	vibeEffect: number; // Additive change to db.vibe when purchased
+};
+
 export type db = {
 	tick: number; // 1000 ticks = 1 day
+	cafeSettings: cafeSetting[];
 	managers: manager[];
 	staff: employee[];
 	cash: number;
@@ -43,6 +56,7 @@ export type db = {
 	ownedEquipment: ownedEquipmentItem[];
 	popularity: number; // 0-100
 	totalDemand: number; // Sum of demand from all menu items
+	vibe: number;
 	stats: {
 		totalOrders: number;
 		ordersYesterday: number;

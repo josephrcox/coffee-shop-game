@@ -18,6 +18,8 @@
 		purchaseItem,
 		repairEquipment,
 		hasManager,
+		calculateNetProfitToday,
+		calculateTotalWages,
 	} from './utils';
 	import {
 		type ownedEquipmentItem,
@@ -122,7 +124,7 @@
 		return { count: 0, color: '' };
 	}
 
-	let profitWithWages = 0;
+	let netProfitToday = 0;
 	let profitDelta = 0;
 
 	function getDeltaBadgeClass(delta: number): string {
@@ -132,17 +134,8 @@
 	}
 
 	$: {
-		const staffWages = $databaseStore.staff.reduce(
-			(sum, employee) => sum + employee.dailyWage,
-			0,
-		);
-		const managerWages = $databaseStore.managers.reduce(
-			(sum, manager) => sum + manager.dailyWage,
-			0,
-		);
-		const totalWages = staffWages + managerWages;
-		profitWithWages = $databaseStore.stats.profitToday - totalWages;
-		profitDelta = profitWithWages - $databaseStore.stats.profitYesterday;
+		netProfitToday = calculateNetProfitToday($databaseStore);
+		profitDelta = netProfitToday - $databaseStore.stats.profitYesterday;
 	}
 
 	function handleInventoryClick(itemName: string) {
@@ -227,16 +220,11 @@
 		<div class="flex flex-col">
 			<div class="flex items-center gap-2">
 				<span class="text-textSecondary">Cash</span>
-				<span class="font-semibold text-accent">${$databaseStore.cash}</span>
+				<span class="font-semibold">${$databaseStore.cash}</span>
 			</div>
 			<div class="flex items-center gap-2">
-				<span class="text-textSecondary text-xs">Profit (net)</span>
-				<span class="text-sm">{profitWithWages}</span>
-				<span
-					class={'text-xs px-1.5 rounded-md ' + getDeltaBadgeClass(profitDelta)}
-				>
-					{profitDelta > 0 ? `+${profitDelta}` : profitDelta}
-				</span>
+				<span class="text-textSecondary text-xs">Profit</span>
+				<span class="text-sm">{netProfitToday}</span>
 			</div>
 		</div>
 		<div class="flex flex-col">
@@ -253,9 +241,15 @@
 						: $databaseStore.stats.popularityChange || 0}
 				</span>
 			</div>
-			<span class="text-textSecondary"
-				>Demand: {Math.floor($databaseStore.totalDemand)}</span
-			>
+			<div class="flex flex-row items-center gap-2">
+				<span class="text-textSecondary">Demand</span>
+				<span class="font-medium">{Math.floor($databaseStore.totalDemand)}</span
+				>
+			</div>
+			<div class="flex flex-row items-center gap-2">
+				<span class="text-textSecondary">Vibe</span>
+				<span class="font-medium">{$databaseStore.vibe.toFixed(2)}</span>
+			</div>
 		</div>
 	</div>
 	<div class="flex flex-col">
@@ -377,83 +371,50 @@
 				</div>
 			{/each}
 		</div>
-		<div class="flex flex-col">
-			<div class="flex flex-row gap-2">
-				<span class="font-semibold pb-2 text-accent">Inventory</span>
-				<button
-					class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
-					data-nux-id="open-shop"
-					on:click={() => {
-						$paused = true;
-						$showShopModal = true;
-					}}
-				>
-					Shop
-				</button>
-			</div>
-
-			{#each $databaseStore.inventory as item, index}
-				{@const purchasableItem = purchasableItems.find(
-					(p) => p.name === item.name,
-				)}
-				<div class="flex flex-row items-center justify-between pb-1">
-					<span>{item.name}</span>
-					<Pill
-						variant={item.quantity > 25 ? 'success' : 'warning'}
-						normalContent={item.quantity.toString()}
-						hoverContent={purchasableItem
-							? `${item.quantity} +($${purchasableItem.cost})`
-							: item.quantity.toString()}
-						onClick={() => handleInventoryClick(item.name)}
-					>
-						<div slot="visual">
-							{#if getInventoryLines(item.quantity).count > 0}
-								<div class="flex flex-row gap-0.5 opacity-50">
-									{#each Array(getInventoryLines(item.quantity).count) as _}
-										<div
-											class="w-0.5 h-3 {getInventoryLines(item.quantity).color}"
-										></div>
-									{/each}
-								</div>
-							{/if}
-						</div>
-					</Pill>
-				</div>
-			{/each}
-		</div>
 	</div>
-
 	<div class="flex flex-col">
 		<div class="flex flex-row gap-2">
-			<span class="font-semibold pb-2 text-accent">Menu </span>
+			<span class="font-semibold pb-2 text-accent">Inventory</span>
 			<button
 				class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
-				data-nux-id="open-menu"
+				data-nux-id="open-shop"
 				on:click={() => {
-					$showMenuPage = true;
 					$paused = true;
+					$showShopModal = true;
 				}}
 			>
-				Manage Menu
+				Shop
 			</button>
 		</div>
-		<div class="flex flex-col gap-1">
-			{#each $databaseStore.menu as item}
-				<div class="flex flex-row items-center justify-between gap-1 w-full">
-					<span>{item.name}</span>
-					<Pill
-						variant={'success'}
-						normalContent={`$${item.price.toFixed(2)}`}
-						hoverContent={'Adjust price'}
-						tooltip={!hasManager(Trait.FINANCIAL, $databaseStore)
-							? 'You need a financial manager to adjust prices'
-							: undefined}
-						disabled={!hasManager(Trait.FINANCIAL, $databaseStore)}
-						onClick={() => handlePriceAdjustment(item)}
-					/>
-				</div>
-			{/each}
-		</div>
+
+		{#each $databaseStore.inventory as item, index}
+			{@const purchasableItem = purchasableItems.find(
+				(p) => p.name === item.name,
+			)}
+			<div class="flex flex-row items-center justify-between pb-1">
+				<span>{item.name}</span>
+				<Pill
+					variant={item.quantity > 25 ? 'success' : 'warning'}
+					normalContent={item.quantity.toString()}
+					hoverContent={purchasableItem
+						? `${item.quantity} +($${purchasableItem.cost})`
+						: item.quantity.toString()}
+					onClick={() => handleInventoryClick(item.name)}
+				>
+					<div slot="visual">
+						{#if getInventoryLines(item.quantity).count > 0}
+							<div class="flex flex-row gap-0.5 opacity-50">
+								{#each Array(getInventoryLines(item.quantity).count) as _}
+									<div
+										class="w-0.5 h-3 {getInventoryLines(item.quantity).color}"
+									></div>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				</Pill>
+			</div>
+		{/each}
 	</div>
 </div>
 
