@@ -6,6 +6,7 @@
 		endOfDayMessages,
 		showQuestConfetti,
 		paused,
+		currentView,
 		selectedEmployee,
 	} from './store';
 	import type { menuItem } from './objects/types';
@@ -13,8 +14,7 @@
 	import { slide, fade, scale } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 
-	// View state for switching between Orders and Café
-	let currentView: 'orders' | 'cafe' = 'orders';
+	// View state moved to store: currentView
 
 	function groupItems(items: menuItem[]) {
 		if (!items) return [];
@@ -38,20 +38,20 @@
 	<!-- Navigation tabs -->
 	<div class="flex items-center gap-4 mb-6 flex-shrink-0">
 		<button
-			class="text-[64px] font-semibold transition-colors duration-200 {currentView ===
+			class="text-[64px] font-semibold transition-colors duration-200 {$currentView ===
 			'orders'
 				? 'text-accent'
 				: 'text-textSecondary/50 hover:text-textSecondary'}"
-			on:click={() => (currentView = 'orders')}
+			on:click={() => currentView.set('orders')}
 		>
 			Orders
 		</button>
 		<button
-			class="text-[64px] font-semibold transition-colors duration-200 {currentView ===
+			class="text-[64px] font-semibold transition-colors duration-200 {$currentView ===
 			'cafe'
 				? 'text-accent'
 				: 'text-textSecondary/50 hover:text-textSecondary'}"
-			on:click={() => (currentView = 'cafe')}
+			on:click={() => currentView.set('cafe')}
 		>
 			Café
 		</button>
@@ -59,7 +59,7 @@
 
 	<!-- Content area -->
 	<div class="flex-1 overflow-y-auto min-h-0">
-		{#if currentView === 'orders'}
+		{#if $currentView === 'orders'}
 			<!-- Orders View -->
 			<!-- svelte-ignore a11y-no-static-element-interactions -->
 			{#if $currentTip}
@@ -128,9 +128,9 @@
 					).length - 10} more orders...
 				</div>
 			{/if}
-		{:else if currentView === 'cafe'}
+		{:else if $currentView === 'cafe'}
 			<!-- Café Customization View -->
-			<div class="max-w-4xl pb-8">
+			<div class="max-w-4xl pb-8" data-nux-id="cafe-settings">
 				{#if $databaseStore.cafeSettings && $databaseStore.cafeSettings.length > 0}
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 						{#each $databaseStore.cafeSettings as setting, idx}

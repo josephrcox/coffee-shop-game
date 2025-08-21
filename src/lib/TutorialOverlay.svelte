@@ -19,6 +19,7 @@
 		showQuestConfetti,
 		paused,
 		playerName,
+		currentView,
 	} from './store';
 	import { get } from 'svelte/store';
 	import { Ingredient, MenuItem } from './objects/types';
@@ -253,6 +254,18 @@
 				nextStep();
 			}
 		});
+		// When reaching the Café settings step, auto-switch to the café tab
+		const unsubCafeStep = tutorial.subscribe((t) => {
+			if (!t.active) return;
+			if (t.step === 9) {
+				paused.set(true);
+				currentView.set('cafe');
+				// ensure rect calculates against cafe content
+				setTimeout(() => {
+					updateRect();
+				}, 0);
+			}
+		});
 		// If the page was refreshed mid-step, re-open any needed modal based on the step target
 		// Only do this if we detect previously persisted UI state; after a full reset (no localStorage), don't auto-open
 		const hadUiState = !!localStorage.getItem('the-grind-ui');
@@ -271,7 +284,14 @@
 				showHiringModal.set(true);
 			}
 		}
-		unsubscribes = [unsubTutorial, unsubDb, unsubShop, unsubMenu, unsubHiring];
+		unsubscribes = [
+			unsubTutorial,
+			unsubDb,
+			unsubShop,
+			unsubMenu,
+			unsubHiring,
+			unsubCafeStep,
+		];
 		window.addEventListener('resize', updateRect);
 		window.addEventListener('scroll', updateRect, { passive: true });
 		updateRect();
@@ -298,7 +318,7 @@
 		{/if}
 
 		<!-- Tooltip -->
-		{#if $tutorial.step <= 8 && !showWelcome}
+		{#if $tutorial.step <= 9 && !showWelcome}
 			<div
 				class="absolute max-w-xs bg-cardBackground/95 text-textPrimary border border-info/60 rounded-lg p-3 shadow-2xl pointer-events-auto"
 				style="left: {tooltipX}px; top: {tooltipY}px;"
@@ -315,6 +335,11 @@
 								on:click={() => {
 									if ($tutorial.step === 8) {
 										closeAllModals(true);
+									}
+									// On Café settings step, return to Orders and move to final message
+									if ($tutorial.step === 9) {
+										currentView.set('orders');
+										paused.set(false);
 									}
 									nextStep();
 								}}
@@ -369,7 +394,7 @@
 			</div>
 		{/if}
 
-		{#if $tutorial.step === 9}
+		{#if $tutorial.step === 10}
 			<div
 				class="absolute inset-0 flex items-center justify-center pointer-events-auto"
 			>
@@ -380,7 +405,7 @@
 					<button
 						class="btn bg-success/80 text-textPrimary hover:bg-success border-success/50"
 						on:click={() =>
-							tutorial.set({ active: false, step: 10, completed: true })}
+							tutorial.set({ active: false, step: 11, completed: true })}
 					>
 						Finish
 					</button>

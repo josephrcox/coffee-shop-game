@@ -115,6 +115,13 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
 			'Here, you can hire employees & managers. \n\nEmployees will work on orders.\n\nManagers unlock new capabilities after your shop is more established.',
 		manual: true,
 	},
+	{
+		id: 9,
+		targetId: 'cafe-settings',
+		message:
+			"Finally, customize your Café. Upgrades improve your shop's vibe, which boosts demand and customer enjoyment.",
+		manual: true,
+	},
 ];
 
 export const TUTORIAL_WELCOME_TITLE = 'Welcome to The Grind';

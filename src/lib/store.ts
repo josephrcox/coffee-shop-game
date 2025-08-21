@@ -627,6 +627,9 @@ export const showPriceAdjustmentModal = writable<boolean>(
 export const selectedEmployee = writable<employee | null>(null);
 export const selectedMenuItem = writable<menuItem | null>(null);
 
+// Main view tab for Body.svelte (orders | cafe)
+export const currentView = writable<'orders' | 'cafe'>('orders');
+
 // Keep the game paused while the tutorial is active; unpause when it finishes
 let tutorialPauseUnsubscribe: (() => void) | null = null;
 let pausedEnforceUnsubscribe: (() => void) | null = null;
