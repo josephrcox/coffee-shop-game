@@ -48,7 +48,6 @@
 		$databaseStore.staff = $databaseStore.staff.filter(
 			(e) => e.name !== employeeToFire.name,
 		);
-		$databaseStore.stats.expensesToday += employeeToFire.dailyWage;
 		$selectedEmployee = null;
 		$showStaffDetailModal = false;
 		$paused = false;

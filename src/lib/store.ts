@@ -260,13 +260,13 @@ export const DEFAULT_CAFE_SETTINGS: cafeSetting[] = [
 			{
 				description: 'Some tables and benches',
 				cost: 2000,
-				vibeEffect: 0.1,
+				vibeEffect: 1.25,
 			},
 			{
 				description:
 					'The maximum number of tables & chairs, along with bar seating',
 				cost: 5000,
-				vibeEffect: 0.25,
+				vibeEffect: 1.5,
 			},
 		],
 		level: 0,
@@ -282,7 +282,133 @@ export const DEFAULT_CAFE_SETTINGS: cafeSetting[] = [
 			{
 				description: 'A bathroom with air fresheners & music',
 				cost: 500,
-				vibeEffect: 0.2,
+				vibeEffect: 1.25,
+			},
+		],
+		level: 0,
+	},
+	{
+		name: 'Lighting',
+		levels: [
+			{
+				description: 'Basic fluorescent overhead lighting',
+				cost: 0,
+				vibeEffect: 0,
+			},
+			{
+				description: 'Warm LED bulbs and table lamps',
+				cost: 800,
+				vibeEffect: 1.15,
+			},
+			{
+				description: 'Professional ambient lighting with dimmers',
+				cost: 2500,
+				vibeEffect: 1.35,
+			},
+		],
+		level: 0,
+	},
+	{
+		name: 'Music',
+		levels: [
+			{
+				description: 'No music',
+				cost: 0,
+				vibeEffect: 0,
+			},
+			{
+				description: 'Nice speakers, music curated by staff',
+				cost: 300,
+				vibeEffect: 1.1,
+			},
+			{
+				description: 'Great system & piano that customers can play',
+				cost: 1500,
+				vibeEffect: 1.2,
+			},
+		],
+		level: 0,
+	},
+	{
+		name: 'Decor',
+		levels: [
+			{
+				description: 'Bare walls and minimal decor',
+				cost: 0,
+				vibeEffect: 0,
+			},
+			{
+				description: 'Local art, plants, and cozy touches',
+				cost: 1200,
+				vibeEffect: 1.25,
+			},
+			{
+				description: 'Curated gallery wall and premium interior design',
+				cost: 4000,
+				vibeEffect: 1.25,
+			},
+		],
+		level: 0,
+	},
+	{
+		name: 'Remote Work Policy',
+		levels: [
+			{
+				description: 'No laptops or remote work allowed',
+				cost: 0,
+				vibeEffect: 0,
+			},
+			{
+				description: 'Laptops welcome during off-peak hours only',
+				cost: 0,
+				weeklyCost: 100, // weekly fee for WiFi maintenance
+				vibeEffect: 1.25,
+			},
+			{
+				description: 'Full remote work friendly with dedicated zones',
+				cost: 0,
+				weeklyCost: 200, // weekly fee for enhanced WiFi and power
+				vibeEffect: 1.35,
+			},
+		],
+		level: 0,
+	},
+	{
+		name: 'Pet Policy',
+		levels: [
+			{
+				description: 'No pets allowed',
+				cost: 0,
+				vibeEffect: 0,
+			},
+			{
+				description: 'Pets welcome!',
+				cost: 0,
+				weeklyCost: 100, // weekly insurance and cleaning costs
+				vibeEffect: 1.5,
+			},
+		],
+		level: 0,
+	},
+	{
+		name: 'Community Events',
+		levels: [
+			{
+				description: 'No special events or community programming',
+				cost: 0,
+				vibeEffect: 0,
+			},
+			{
+				description: 'Monthly book clubs and small gatherings',
+				cost: 0,
+				weeklyCost: 200, // weekly cost for event coordination
+				vibeEffect: 1.3,
+			},
+			{
+				description: 'Weekly live music, art shows, and community events',
+				cost: 0,
+				weeklyCost: 1000, // weekly cost for events and promotion
+				vibeEffect: 1.5,
 			},
 		],
 		level: 0,

@@ -15,6 +15,7 @@ import {
 	checkWageHealth,
 	updateMarketPrices,
 	autoRestockInventory,
+	calculateDailyCafeCosts,
 } from './utils';
 import type { db, quest } from './objects/types';
 import { quests, Trait } from './objects/types';
@@ -107,6 +108,8 @@ export function gameLoop() {
 		}
 	});
 
+	// Legacy weekly cafe cost billing removed; handled daily at rollover
+
 	if (db.tick % 1000 === 0) {
 		// Start of day! :)
 
@@ -127,9 +130,13 @@ export function gameLoop() {
 		db.stats.popularityChange = db.popularity - db.stats.popularityYesterday;
 		db.stats.ordersChange = db.stats.totalOrders - db.stats.ordersYesterday;
 
-		// Yesterday's net profit = Today's revenue - today's expenses - today's wages
+		// Yesterday's net profit = revenue - expenses - wages - cafe daily costs
+		const dailyCafeCosts = calculateDailyCafeCosts(db);
 		db.stats.profitYesterday =
-			db.stats.revenueToday - db.stats.expensesToday - totalWages;
+			db.stats.revenueToday -
+			db.stats.expensesToday -
+			totalWages -
+			dailyCafeCosts;
 		db.stats.ordersYesterday = db.orders.filter(
 			(o) => o.completion >= 100,
 		).length;
@@ -179,8 +186,9 @@ export function gameLoop() {
 			}
 		});
 
-		// Pay staff wages
+		// Pay staff wages and cafe daily costs
 		db.cash -= totalWages;
+		db.cash -= dailyCafeCosts;
 
 		// Reset for new day
 		db.orders = [];

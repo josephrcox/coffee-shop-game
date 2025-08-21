@@ -309,10 +309,10 @@ export function workOnOrder(order: order, game: db): db {
 		const patienceFactor = order.customerPatience / 250;
 		let popularityExpectationMultiplier;
 		if (game.popularity < 65) {
-			popularityExpectationMultiplier = 0.6 + (game.popularity / 50) * 0.55;
+			popularityExpectationMultiplier = 0.5 + (game.popularity / 50) * 0.45;
 		} else {
 			popularityExpectationMultiplier =
-				0.85 + ((game.popularity - 50) / 50) * 0.45;
+				0.7 + ((game.popularity - 50) / 50) * 0.35;
 		}
 
 		const experienceBonus = Math.min(0.3, (employee.experience - 100) / 900);
@@ -326,15 +326,15 @@ export function workOnOrder(order: order, game: db): db {
 
 		if (timeRatio <= fastThreshold) {
 			const experienceRatio = employee.experience / 500;
-			const baseChance = Math.min(0.4, 0.1 + experienceRatio * 0.15);
+			const baseChance = Math.min(0.5, 0.2 + experienceRatio * 0.15);
 
 			let popularityModifier;
 			if (game.popularity < 35) {
 				const lowPopularityBonus = (35 - game.popularity) * 0.4;
 				popularityModifier = 1 + lowPopularityBonus / 100;
 			} else {
-				const popularityPenalty = Math.pow((game.popularity - 50) / 50, 1.5);
-				popularityModifier = 1 - popularityPenalty * 0.4;
+				const popularityPenalty = Math.pow((game.popularity - 50) / 50, 1.2);
+				popularityModifier = 1 - popularityPenalty * 0.25;
 			}
 			const finalChance = baseChance * popularityModifier;
 
@@ -358,9 +358,9 @@ export function workOnOrder(order: order, game: db): db {
 
 			let popularityBonus;
 			if (game.popularity < 50) {
-				popularityBonus = (50 - game.popularity) * 1.2;
+				popularityBonus = (50 - game.popularity) * 1.0;
 			} else {
-				popularityBonus = ((100 - game.popularity) / 100) * 0.3;
+				popularityBonus = ((100 - game.popularity) / 100) * 0.2;
 			}
 			const finalChance = baseChance - popularityBonus;
 
@@ -383,9 +383,9 @@ export function workOnOrder(order: order, game: db): db {
 				mehSound.play();
 			}
 		} else {
-			const neutralChance = 0.05;
+			const neutralChance = 0.15;
 			if (Math.random() < neutralChance) {
-				if (Math.random() < 0.4) {
+				if (Math.random() < 0.5) {
 					game.popularity += 1;
 				} else {
 					game.popularity -= 1;
@@ -846,17 +846,8 @@ export function canUpgradeCafeSetting(setting: cafeSetting, game: db): boolean {
 	return game.cash >= next.cost;
 }
 
-export function applyCafeSettingLevelEffect(
-	db: db,
-	level: cafeSettingLevel,
-): db {
-	if (typeof (level as any).vibeEffect === 'number') {
-		db.vibe += (level as any).vibeEffect as number;
-	}
-	return db;
-}
-
 export function upgradeCafeSettingAtIndex(index: number): boolean {
+	alert(index);
 	let success = false;
 	databaseStore.update((db) => {
 		const setting = db.cafeSettings?.[index];
@@ -871,17 +862,18 @@ export function upgradeCafeSettingAtIndex(index: number): boolean {
 		db.cash -= nextLevel.cost;
 		db.stats.expensesToday += nextLevel.cost;
 
-		// Apply effect via general applier
-		const effected = applyCafeSettingLevelEffect(db, nextLevel);
+		if (nextLevel.vibeEffect > 0) {
+			db.vibe *= nextLevel.vibeEffect;
+		}
 
 		// Update level
-		const updatedSetting = effected.cafeSettings?.[index];
+		const updatedSetting = db.cafeSettings?.[index];
 		if (updatedSetting) {
 			updatedSetting.level = nextIndex;
 		}
 
 		success = true;
-		return effected;
+		return db;
 	});
 	return success;
 }
@@ -899,8 +891,24 @@ export function calculateTotalWages(game: db): number {
 	return staffWages + managerWages;
 }
 
+export function calculateDailyCafeCosts(game: db): number {
+	// Sum current level weekly costs and convert to a daily charge
+	const totalWeekly = game.cafeSettings.reduce((sum, setting) => {
+		const level =
+			setting.levels[Math.min(setting.level, setting.levels.length - 1)];
+		const weekly = level?.weeklyCost || 0;
+		return sum + weekly;
+	}, 0);
+	// Mirror wages behavior by using an integer daily amount
+	return Math.round(totalWeekly / 7);
+}
+
 export function calculateNetProfitToday(game: db): number {
-	return game.stats.profitToday - calculateTotalWages(game);
+	return (
+		game.stats.profitToday -
+		calculateTotalWages(game) -
+		calculateDailyCafeCosts(game)
+	);
 }
 
 export function calculateGrossProfitToday(game: db): number {

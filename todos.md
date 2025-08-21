@@ -3,3 +3,7 @@
 - [ ] Review feed. 
 - [ ] Pastries, food. 
 - [ ] Employee traits. 
+- [ ] Café management
+
+### Feedback from Sam
+- [ ] 1 missing should have a hover

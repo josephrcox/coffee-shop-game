@@ -193,7 +193,10 @@
 									<td class="py-2 px-2 text-center">
 										{#if missingIngredients.length > 0}
 											<div class="text-xs text-warning">
-												⚠️ {missingIngredients.length} missing
+												⚠️ {missingIngredients.map(
+													([ingredient]) => ingredient,
+												)}
+												missing
 											</div>
 										{:else}
 											<span

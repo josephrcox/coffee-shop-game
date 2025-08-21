@@ -226,50 +226,6 @@
 				</div>
 			</div>
 
-			<!-- Customize Café -->
-			<div class=" p-1 pt-4 border-t-2 border-info/10">
-				<h3 class="text-sm font-semibold text-accent">Customize Café</h3>
-				{#if $databaseStore.cafeSettings && $databaseStore.cafeSettings.length > 0}
-					<div class="text-sm text-textPrimary">
-						{#each $databaseStore.cafeSettings as setting, idx}
-							{@const current = setting.levels[setting.level]}
-							{@const next = setting.levels[setting.level + 1]}
-							{@const affordable = next
-								? $databaseStore.cash >= next.cost
-								: false}
-							<div class="py-2 flex flex-col gap-1">
-								<div class="flex flex-row items-center justify-between gap-2">
-									<span class="text-textSecondary font-semibold"
-										>{setting.name}</span
-									>
-									<div
-										class="tooltip tooltip-left"
-										data-tip={next
-											? `${next.description}`
-											: 'Max level reached'}
-									>
-										<button
-											class={`btn btn-xs ${next && affordable ? 'bg-success/70 hover:bg-success text-textPrimary border-success/50' : 'bg-borderColor/30 text-error border-borderColor/40 cursor-not-allowed hover:bg-borderColor/30'}`}
-											on:click={() => {
-												if (next && affordable) {
-													$databaseStore.cash -= next.cost;
-													setting.level++;
-												}
-											}}
-										>
-											{next ? `Upgrade $${next.cost}` : 'Max'}
-										</button>
-									</div>
-								</div>
-								<div class="text-xs text-textSecondary/80">
-									{current.description}
-								</div>
-							</div>
-						{/each}
-					</div>
-				{/if}
-			</div>
-
 			{#if $showQuestConfetti}
 				<div use:confetti={{ particleCount: 200, force: 0.3 }} />
 			{/if}
@@ -292,10 +248,20 @@
 										>{completedQuest.description}</span
 									>
 								{/if}
-								<span class="text-xs text-accent mt-1"
-									>Reward: ${completedQuest.reward.cash} + {completedQuest
-										.reward.popularity} popularity</span
-								>
+								{#if completedQuest.reward.popularity > 0 && completedQuest.reward.cash > 0}
+									<span class="text-xs text-accent mt-1"
+										>Reward: ${completedQuest.reward.cash} + {completedQuest
+											.reward.popularity} popularity</span
+									>
+								{:else if completedQuest.reward.popularity > 0}
+									<span class="text-xs text-accent mt-1"
+										>Reward: {completedQuest.reward.popularity} popularity</span
+									>
+								{:else}
+									<span class="text-xs text-accent mt-1"
+										>Reward: ${completedQuest.reward.cash}</span
+									>
+								{/if}
 							</div>
 						{/if}
 					{:else}
@@ -313,10 +279,10 @@
 
 						{#if allQuests.length > 0}
 							<div class="text-sm text-textPrimary flex flex-col gap-1 mt-2">
-								{#each allQuests.slice(0, 8) as quest}
+								{#each allQuests as quest}
 									<div
 										class="flex flex-row items-start gap-2 tooltip tooltip-top"
-										data-tip={`$${quest.reward.cash} + ${quest.reward.popularity} popularity`}
+										data-tip={`${quest.reward.cash > 0 ? `$${quest.reward.cash}` : ''}${quest.reward.cash > 0 && quest.reward.popularity > 0 ? ' + ' : ''}${quest.reward.popularity > 0 ? `${quest.reward.popularity} popularity` : ''}`}
 									>
 										<div
 											class="w-4 h-4 border border-white {quest.completed
@@ -329,7 +295,7 @@
 										</div>
 										<div class="flex flex-col">
 											<span
-												class=" text-xs font-medium {quest.completed
+												class=" text-xs font-medium text-start {quest.completed
 													? 'line-through text-success/80 opacity-50'
 													: 'text-white'}">{quest.name}</span
 											>

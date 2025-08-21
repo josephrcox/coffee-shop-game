@@ -41,6 +41,7 @@ export type cafeSetting = {
 export type cafeSettingLevel = {
 	description: string;
 	cost: number;
+	weeklyCost?: number; // Optional weekly recurring cost
 	vibeEffect: number; // Additive change to db.vibe when purchased
 };
 
@@ -176,6 +177,210 @@ export const quests: quest[] = [
 			popularity: 5,
 		},
 		isCompleted: (db) => db.menu.length > 1,
+	},
+	{
+		id: 'espresso-master',
+		name: 'Serve 10 espresso-based drinks',
+		completed: false,
+		showingCompletion: false,
+		reward: {
+			cash: 500,
+			popularity: 10,
+		},
+		isCompleted: (db) => {
+			const espressoOrders = db.orders.filter(
+				(order) =>
+					order.completion === 100 &&
+					order.items.some(
+						(item) =>
+							item.name.includes('Espresso') ||
+							item.name.includes('Latte') ||
+							item.name.includes('Cappuccino') ||
+							item.name.includes('Americano'),
+					),
+			);
+			return espressoOrders.length >= 100;
+		},
+	},
+	{
+		id: 'equipment-upgrade',
+		name: 'Buy new equipment',
+		completed: false,
+		showingCompletion: false,
+		reward: {
+			cash: 750,
+			popularity: 5,
+		},
+		isCompleted: (db) => db.ownedEquipment.length > 1,
+	},
+	{
+		id: 'tea-specialist',
+		name: 'Serve 100 tea-based drinks',
+		completed: false,
+		showingCompletion: false,
+		reward: {
+			cash: 500,
+			popularity: 2,
+		},
+		isCompleted: (db) => {
+			const teaOrders = db.orders.filter(
+				(order) =>
+					order.completion === 100 &&
+					order.items.some(
+						(item) => item.name.includes('Tea') || item.name.includes('Chai'),
+					),
+			);
+			return teaOrders.length >= 100;
+		},
+	},
+	{
+		id: 'big-profit-day',
+		name: 'Make $1000 profit in one day',
+		completed: false,
+		showingCompletion: false,
+		reward: {
+			cash: 1000,
+			popularity: 0,
+		},
+		isCompleted: (db) => db.stats.profitToday >= 500,
+	},
+	{
+		id: 'diversified-menu',
+		name: 'Have 5 different menu items',
+		completed: false,
+		showingCompletion: false,
+		reward: {
+			cash: 600,
+			popularity: 2,
+		},
+		isCompleted: (db) => db.menu.length >= 5,
+	},
+	{
+		id: 'growing-team',
+		name: 'Hire 3 employees',
+		completed: false,
+		showingCompletion: false,
+		reward: {
+			cash: 800,
+			popularity: 3,
+		},
+		isCompleted: (db) => db.staff.length >= 4, // 3 employees + owner
+	},
+	{
+		id: 'customer-satisfaction',
+		name: 'Complete 10 orders without any failures',
+		completed: false,
+		showingCompletion: false,
+		reward: {
+			cash: 0,
+			popularity: 5,
+		},
+		isCompleted: (db) => {
+			// This would need tracking of consecutive successful orders
+			// For now, simplified to recent orders completion
+			const recentOrders = db.orders.slice(-10);
+			return (
+				recentOrders.length >= 10 &&
+				recentOrders.every((order) => order.completion === 100)
+			);
+		},
+	},
+	{
+		id: 'month-milestone',
+		name: 'Stay in business for 30 days',
+		completed: false,
+		showingCompletion: false,
+		reward: {
+			cash: 30,
+			popularity: 15,
+		},
+		onCompleted: (db) => {
+			alert(
+				'Congratulations on your first month! Your coffee shop is becoming a local favorite!',
+			);
+		},
+		isCompleted: (db) => Math.floor(db.tick / 1000) >= 30,
+	},
+	{
+		id: 'premium-equipment',
+		name: 'Own an espresso machine',
+		completed: false,
+		showingCompletion: false,
+		reward: {
+			cash: 750,
+			popularity: 15,
+		},
+		isCompleted: (db) =>
+			db.ownedEquipment.some((eq) => eq.name === '☕️ Espresso machine'),
+	},
+	{
+		id: 'cash-reserves',
+		name: 'Save up $10000 in cash',
+		completed: false,
+		showingCompletion: false,
+		reward: {
+			cash: 1000,
+			popularity: 0,
+		},
+		isCompleted: (db) => db.cash >= 10000,
+	},
+	{
+		id: 'rush-hour-hero',
+		name: 'Complete 100 orders in one day',
+		completed: false,
+		showingCompletion: false,
+		reward: {
+			cash: 5000,
+			popularity: 5,
+		},
+		isCompleted: (db) => db.stats.ordersToday >= 100,
+	},
+	{
+		id: 'equipment-collector',
+		name: 'Own all 5 types of equipment',
+		completed: false,
+		showingCompletion: false,
+		reward: {
+			cash: 500,
+			popularity: 0,
+		},
+		isCompleted: (db) => {
+			const allEquipment = [
+				'☕️ Drip coffee machine',
+				'☕️ Coffee grinder',
+				'☕️ Espresso machine',
+				'🥛 Milk frother',
+				'🧊 Ice machine',
+			];
+			return allEquipment.every((equipment) =>
+				db.ownedEquipment.some((owned) => owned.name === equipment),
+			);
+		},
+	},
+	{
+		id: 'revenue-milestone',
+		name: 'Generate $1000 revenue in one day',
+		completed: false,
+		showingCompletion: false,
+		reward: {
+			cash: 2500,
+			popularity: 2,
+		},
+		isCompleted: (db) => db.stats.revenueToday >= 1000,
+	},
+	{
+		id: 'total-orders-100',
+		name: 'Complete 100 total orders',
+		completed: false,
+		showingCompletion: false,
+		reward: {
+			cash: 800,
+			popularity: 3,
+		},
+		onCompleted: (db) => {
+			alert('100 orders served! Your coffee shop is gaining momentum!');
+		},
+		isCompleted: (db) => db.stats.totalOrders >= 100,
 	},
 ];
 
