@@ -53,7 +53,7 @@ export function getProficiencySpeedMultiplier(
 	// - Cap at 2.0× speed (half the ticks) reached by ~200 items
 	const startSpeed = 2 / 3; // ≈0.6667
 	const maxSpeed = 2.0;
-	const progress = Math.min(1, count / 200);
+	const progress = Math.min(1, count / 250);
 	const multiplier = startSpeed + (maxSpeed - startSpeed) * progress;
 	return Math.max(startSpeed, Math.min(maxSpeed, multiplier));
 }
@@ -73,10 +73,11 @@ function computePatienceTicks(
 	vibe: number,
 ): number {
 	const popXp = effectiveXpFromPopularity(popularity);
-	const base = items.reduce(
-		(sum, item) => sum + baseTicksForItemAtXP(item.complexity, popXp),
-		0,
-	);
+	const base =
+		items.reduce(
+			(sum, item) => sum + baseTicksForItemAtXP(item.complexity, popXp),
+			0,
+		) * 1.2;
 	const rng = 0.8 + Math.random() * 0.4; // 0.8–1.2
 	const preVibe = base * rng;
 	const vibeMultiplier = 1 + (vibe - 1) / 2; // 1.0→×1, 2.0→×1.5, 5.0→×3
@@ -390,6 +391,10 @@ export function workOnOrder(order: order, game: db): db {
 			if (Math.random() < chance) {
 				game.popularity -= 1;
 				currentTip.set(`${order.customer} expected their order faster`);
+
+				setTimeout(() => {
+					currentTip.set('');
+				}, 3000);
 				let rand = Math.random();
 				const mehSound =
 					rand < 0.25

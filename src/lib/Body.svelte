@@ -32,11 +32,11 @@
 
 <!-- Main content with navigation -->
 <div
-	class="h-full bg-mainBackground text-textPrimary px-8 pt-4 flex flex-col"
+	class="h-full bg-mainBackground text-textPrimary px-6 pt-1 flex flex-col"
 	data-nux-id="orders-header"
 >
 	<!-- Navigation tabs -->
-	<div class="flex items-center gap-4 mb-6 flex-shrink-0">
+	<div class="flex items-center gap-8 mb-6 flex-shrink-0">
 		<button
 			class="text-[64px] font-semibold transition-colors duration-200 {$currentView ===
 			'orders'
@@ -63,17 +63,13 @@
 			<!-- Orders View -->
 			<!-- svelte-ignore a11y-no-static-element-interactions -->
 			{#if $currentTip}
-				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<div
 					in:slide={{ duration: 500, easing: quintOut, axis: 'y' }}
 					out:slide={{ duration: 300, easing: quintOut, axis: 'y' }}
-					class="bg-error border border-warning/60 rounded-lg p-2 z-20 cursor-pointer backdrop-blur-sm w-fit mt-2 mb-4 fixed bottom-4 left-4"
-					on:click={() => currentTip.set('')}
+					class="bg-error border border-warning/60 rounded-lg p-2 z-20 backdrop-blur-sm w-fit mt-2 mb-4 fixed bottom-4 left-4"
 				>
 					<p class="text-sm text-white">
 						{$currentTip}
-						<br />
-						<span class="text-xs text-white underline"> Click to dismiss </span>
 					</p>
 				</div>
 			{/if}
@@ -156,7 +152,7 @@
 												data-tip="Downgrade to previous level"
 											>
 												<button
-													class="btn btn-sm bg-warning/70 hover:bg-warning text-textPrimary border-warning/50"
+													class="btn btn-xs bg-warning/70 hover:bg-warning text-textPrimary border-warning/50"
 													on:click={() => {
 														const prevLevel = setting.levels[setting.level - 1];
 														if (prevLevel) {

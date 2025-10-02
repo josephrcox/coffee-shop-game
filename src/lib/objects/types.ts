@@ -127,24 +127,6 @@ export const quests: quest[] = [
 		},
 	},
 	{
-		id: 'first week',
-		name: 'Be open for 7 days',
-		completed: false,
-		showingCompletion: false,
-		reward: {
-			cash: 1000,
-			popularity: 100,
-		},
-		onCompleted: (db) => {
-			alert(
-				"After 1 week of doing great business, it's time for your first rush! Good luck!",
-			);
-		},
-		isCompleted: (db) => {
-			return Math.floor(db.tick / 1000) > 7;
-		},
-	},
-	{
 		id: 'hire',
 		name: 'Hire an employee',
 		completed: false,

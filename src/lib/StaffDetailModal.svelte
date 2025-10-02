@@ -224,7 +224,7 @@
 										></div>
 									</div>
 									<div class="text-xs text-textSecondary mt-1 text-center">
-										{count}/50 for proficiency, 200 for expert.
+										{speedMultiplier > 1 ? 'Expert' : 'Beginner'}
 									</div>
 								</div>
 							</div>

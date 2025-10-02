@@ -170,12 +170,12 @@
 </script>
 
 <div
-	class="grid grid-cols-4 gap-8 w-full {$paused
+	class="flex flex-row w-full {$paused
 		? 'bg-error/40 text-textPrimary border-interactive'
-		: 'bg-cardBackground/80 text-textPrimary'} px-8 py-4 h-fit shadow-2xl border-b-2 border-info/30"
+		: 'bg-cardBackground/80 text-textPrimary'} px-6 py-6 h-fit'}"
 >
 	<!-- Game Controls & Stats Column (Left) -->
-	<div class="flex flex-col">
+	<div class="flex flex-col w-64">
 		<div class="flex flex-row items-center gap-2">
 			<button
 				class="btn btn-sm w-min pr-0 pl-0 {$paused
@@ -189,28 +189,22 @@
 			</button>
 
 			<button
-				class="btn btn-sm px-3 transition-colors duration-150 border-none {!$paused &&
+				class="btn btn-sm px-3 duration-150 border-none transition-all {!$paused &&
 				$gameSpeed === 200
 					? 'bg-info/80 text-textPrimary hover:bg-info'
-					: 'bg-cardBackground/60 text-textSecondary hover:bg-cardBackground/80'}"
+					: !$paused && $gameSpeed === 50
+						? 'bg-red-500/80 text-textPrimary hover:bg-red-500 rounded-2xl'
+						: 'bg-cardBackground/60 text-textSecondary hover:bg-cardBackground/80'} "
 				on:click={() => {
 					$paused = false;
-					$gameSpeed = 200;
+					$gameSpeed = $gameSpeed === 200 ? 50 : 200;
 				}}
 			>
-				Normal
-			</button>
-			<button
-				class="btn btn-sm px-3 transition-colors duration-150 border-none {!$paused &&
-				$gameSpeed === 50
-					? 'bg-info/80 text-textPrimary hover:bg-info'
-					: 'bg-cardBackground/60 text-textSecondary hover:bg-cardBackground/80'}"
-				on:click={() => {
-					$paused = false;
-					$gameSpeed = 50;
-				}}
-			>
-				Fast
+				{#if $gameSpeed === 200}
+					<img src="/normal_speed.svg" alt="normal speed" class="w-4 h-4" />
+				{:else}
+					<img src="/fast_speed.svg" alt="fast speed" class="w-4 h-4" />
+				{/if}
 			</button>
 		</div>
 		<div class="flex items-center gap-2 mt-2">
@@ -221,13 +215,6 @@
 				)}%)</span
 			>
 		</div>
-		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<kbd
-			class="kbd kbd-sm w-fit bg-yellow-800 text-white cursor-pointer mt-2"
-			on:click={() => (helpMenuOpen = !helpMenuOpen)}
-		>
-			💡 Info
-		</kbd>
 
 		<!-- Stats Section -->
 		<div class="flex flex-col mt-2" data-nux-id="stats">
@@ -275,176 +262,187 @@
 						/>
 					{/if}
 				</div>
+				<!-- svelte-ignore a11y-click-events-have-key-events -->
+				<!-- svelte-ignore a11y-no-static-element-interactions -->
+				<kbd
+					class="kbd kbd-xs w-fit bg-yellow-800 opacity-50 hover:opacity-100 text-white cursor-pointer"
+					on:click={() => (helpMenuOpen = !helpMenuOpen)}
+				>
+					💡
+				</kbd>
 			</div>
 		</div>
 	</div>
-
-	<!-- Staff Column -->
-	<div class="flex flex-col">
-		<div class="flex flex-row gap-2">
-			<span class="font-semibold pb-2 text-accent">Staff</span>
-			<button
-				class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
-				data-nux-id="open-hiring"
-				on:click={() => {
-					$paused = true;
-					$showHiringModal = true;
-				}}
-			>
-				Hire
-			</button>
-		</div>
-		<div class="pb-4 flex flex-col gap-1">
-			{#each $databaseStore.staff as employee, index}
-				<!-- svelte-ignore a11y-no-static-element-interactions -->
-				<!-- svelte-ignore a11y-click-events-have-key-events -->
-				<div
-					class="flex flex-row gap-1 cursor-pointer duration-200 rounded {draggedOverIndex ===
-					index
-						? 'bg-info/30'
-						: ''}"
-					draggable="true"
-					on:dragstart={(e) => handleDragStart(e, index)}
-					on:dragover={(e) => handleDragOver(e, index)}
-					on:dragenter={(e) => handleDragEnter(e, index)}
-					on:drop={(e) => handleDrop(e, index)}
-					on:dragend={handleDragEnd}
-					on:mouseenter={() => (hoveredEmployeeIndex = index)}
-					on:mouseleave={() => (hoveredEmployeeIndex = null)}
+	<div class="grid grid-cols-3 gap-8 w-full">
+		<!-- Staff Column -->
+		<div class="flex flex-col">
+			<div class="flex flex-row gap-2">
+				<span class="font-semibold pb-2 text-accent">Staff</span>
+				<button
+					class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
+					data-nux-id="open-hiring"
 					on:click={() => {
-						$selectedEmployee = employee;
 						$paused = true;
-						$showStaffDetailModal = true;
+						$showHiringModal = true;
 					}}
 				>
-					<div class="flex flex-row items-center gap-2 w-full">
-						<div class="flex flex-row items-center w-full gap-1">
-							<span class="text-xs"
-								>{getHappinessEmoji(employee.happiness, true)}</span
-							>
-							<div class=" text-sm">{employee.name}</div>
-						</div>
-						<div
-							class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md"
-						>
-							{employee.experience}xp
-						</div>
-					</div>
-				</div>
-			{/each}
-		</div>
-		{#if $databaseStore.managers.length > 0}
-			<div class="flex flex-col gap-1">
-				<span class="font-semibold text-accent">Managers</span>
-				{#each $databaseStore.managers as manager, index}
-					<div class="flex flex-row items-center justify-between gap-1 w-full">
-						<div
-							class="flex flex-row items-center justify-between w-full gap-1"
-						>
+					Hire
+				</button>
+			</div>
+			<div class="pb-4 flex flex-col gap-1">
+				{#each $databaseStore.staff as employee, index}
+					<!-- svelte-ignore a11y-no-static-element-interactions -->
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<div
+						class="flex flex-row gap-1 cursor-pointer duration-200 rounded {draggedOverIndex ===
+						index
+							? 'bg-info/30'
+							: ''}"
+						draggable="true"
+						on:dragstart={(e) => handleDragStart(e, index)}
+						on:dragover={(e) => handleDragOver(e, index)}
+						on:dragenter={(e) => handleDragEnter(e, index)}
+						on:drop={(e) => handleDrop(e, index)}
+						on:dragend={handleDragEnd}
+						on:mouseenter={() => (hoveredEmployeeIndex = index)}
+						on:mouseleave={() => (hoveredEmployeeIndex = null)}
+						on:click={() => {
+							$selectedEmployee = employee;
+							$paused = true;
+							$showStaffDetailModal = true;
+						}}
+					>
+						<div class="flex flex-row items-center gap-2 w-full">
 							<div class="flex flex-row items-center w-full gap-1">
 								<span class="text-xs"
-									>{getHappinessEmoji(manager.happiness, true)}</span
+									>{getHappinessEmoji(employee.happiness, true)}</span
 								>
-								<span>{manager.name}</span>
+								<div class=" text-sm">{employee.name}</div>
 							</div>
 							<div
 								class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md"
 							>
-								{manager.experience}xp
+								{employee.experience}xp
 							</div>
 						</div>
 					</div>
 				{/each}
 			</div>
-		{/if}
-	</div>
-
-	<!-- Equipment Column (Center) -->
-	<div class="flex flex-col">
-		<div class="flex flex-row gap-2">
-			<span class="font-semibold pb-2 text-accent">Equipment</span>
-			<button
-				class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
-				on:click={() => {
-					$paused = true;
-					$showShopModal = true;
-				}}
-			>
-				Shop
-			</button>
-		</div>
-		{#each $databaseStore.ownedEquipment as equipment, index}
-			<div class="flex flex-row items-center justify-between gap-1 w-full">
-				<span class="overflow-hidden text-ellipsis whitespace-nowrap">
-					{equipment.name}
-				</span>
-				<div
-					class="flex flex-row items-center gap-1 relative group"
-					title="Quality: {equipment.quality}%"
-				>
-					{#if equipment.quality >= 30}
+			{#if $databaseStore.managers.length > 0}
+				<div class="flex flex-col gap-1">
+					<span class="font-semibold text-accent">Managers</span>
+					{#each $databaseStore.managers as manager, index}
 						<div
-							class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md"
+							class="flex flex-row items-center justify-between gap-1 w-full"
 						>
-							Good
+							<div
+								class="flex flex-row items-center justify-between w-full gap-1"
+							>
+								<div class="flex flex-row items-center w-full gap-1">
+									<span class="text-xs"
+										>{getHappinessEmoji(manager.happiness, true)}</span
+									>
+									<span>{manager.name}</span>
+								</div>
+								<div
+									class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md"
+								>
+									{manager.experience}xp
+								</div>
+							</div>
 						</div>
-					{:else}
-						<Pill
-							variant={equipment.quality > 0 ? 'error' : 'interactive'}
-							normalContent={equipment.quality > 0 ? 'Poor' : 'Repair'}
-							hoverContent="Repair (${Math.floor(equipment.cost / 8)})"
-							onClick={() => handleEquipmentRepair(equipment.name)}
-						/>
-					{/if}
+					{/each}
 				</div>
-			</div>
-		{/each}
-	</div>
-
-	<!-- Inventory Column (Right) -->
-	<div class="flex flex-col">
-		<div class="flex flex-row gap-2">
-			<span class="font-semibold pb-2 text-accent">Inventory</span>
-			<button
-				class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
-				data-nux-id="open-shop"
-				on:click={() => {
-					$paused = true;
-					$showShopModal = true;
-				}}
-			>
-				Shop
-			</button>
+			{/if}
 		</div>
 
-		{#each $databaseStore.inventory as item, index}
-			{@const purchasableItem = purchasableItems.find(
-				(p) => p.name === item.name,
-			)}
-			<div class="flex flex-row items-center justify-between pb-1">
-				<span>{item.name}</span>
-				<Pill
-					variant={item.quantity > 25 ? 'success' : 'warning'}
-					normalContent={item.quantity.toString()}
-					hoverContent={purchasableItem
-						? `${item.quantity} +($${purchasableItem.cost})`
-						: item.quantity.toString()}
-					onClick={() => handleInventoryClick(item.name)}
+		<!-- Equipment Column (Center) -->
+		<div class="flex flex-col">
+			<div class="flex flex-row gap-2">
+				<span class="font-semibold pb-2 text-accent">Equipment</span>
+				<button
+					class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
+					on:click={() => {
+						$paused = true;
+						$showShopModal = true;
+					}}
 				>
-					<div slot="visual">
-						{#if getInventoryLines(item.quantity).count > 0}
-							<div class="flex flex-row gap-0.5 opacity-50">
-								{#each Array(getInventoryLines(item.quantity).count) as _}
-									<div
-										class="w-0.5 h-3 {getInventoryLines(item.quantity).color}"
-									></div>
-								{/each}
+					Shop
+				</button>
+			</div>
+			{#each $databaseStore.ownedEquipment as equipment, index}
+				<div class="flex flex-row items-center justify-between gap-1 w-full">
+					<span class="overflow-hidden text-ellipsis whitespace-nowrap">
+						{equipment.name}
+					</span>
+					<div
+						class="flex flex-row items-center gap-1 relative group"
+						title="Quality: {equipment.quality}%"
+					>
+						{#if equipment.quality >= 30}
+							<div
+								class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md"
+							>
+								Good
 							</div>
+						{:else}
+							<Pill
+								variant={equipment.quality > 0 ? 'error' : 'interactive'}
+								normalContent={equipment.quality > 0 ? 'Poor' : 'Repair'}
+								hoverContent="Repair (${Math.floor(equipment.cost / 8)})"
+								onClick={() => handleEquipmentRepair(equipment.name)}
+							/>
 						{/if}
 					</div>
-				</Pill>
+				</div>
+			{/each}
+		</div>
+
+		<!-- Inventory Column (Right) -->
+		<div class="flex flex-col">
+			<div class="flex flex-row gap-2">
+				<span class="font-semibold pb-2 text-accent">Inventory</span>
+				<button
+					class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
+					data-nux-id="open-shop"
+					on:click={() => {
+						$paused = true;
+						$showShopModal = true;
+					}}
+				>
+					Shop
+				</button>
 			</div>
-		{/each}
+
+			{#each $databaseStore.inventory as item, index}
+				{@const purchasableItem = purchasableItems.find(
+					(p) => p.name === item.name,
+				)}
+				<div class="flex flex-row items-center justify-between pb-1">
+					<span>{item.name}</span>
+					<Pill
+						variant={item.quantity > 25 ? 'success' : 'warning'}
+						normalContent={item.quantity.toString()}
+						hoverContent={purchasableItem
+							? `${item.quantity} +($${purchasableItem.cost})`
+							: item.quantity.toString()}
+						onClick={() => handleInventoryClick(item.name)}
+					>
+						<div slot="visual">
+							{#if getInventoryLines(item.quantity).count > 0}
+								<div class="flex flex-row gap-0.5 opacity-50">
+									{#each Array(getInventoryLines(item.quantity).count) as _}
+										<div
+											class="w-0.5 h-3 {getInventoryLines(item.quantity).color}"
+										></div>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					</Pill>
+				</div>
+			{/each}
+		</div>
 	</div>
 </div>
 
