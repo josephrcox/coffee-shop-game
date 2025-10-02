@@ -14,6 +14,75 @@ import {
 } from './objects/types';
 import type { cafeSetting, cafeSettingLevel } from './objects/types';
 
+// --- Expectations & Speed helpers (popularity ↔ patience, XP ↔ ticks) ---
+// These helpers implement the product spec for gradual scaling.
+
+// Piecewise interpolation for the intercept k in: baseTicks = 2*complexity + k(xp)
+// Targets: k(200)=4, k(600)=1, k(1000)=-1. Extrapolate gently beyond bounds.
+function kForExperience(xp: number): number {
+	const clamped = Math.max(0, Math.min(2000, xp));
+	if (clamped <= 200) {
+		// Extend first segment slope (-0.0075) below 200xp
+		return 4 + (200 - clamped) * 0.0075;
+	}
+	if (clamped <= 600) {
+		// Linear 200→600: 4 → 1
+		return 4 + (clamped - 200) * -0.0075;
+	}
+	if (clamped <= 1000) {
+		// Linear 600→1000: 1 → -1
+		return 1 + (clamped - 600) * -0.005;
+	}
+	// Above 1000xp, cap near -1 to avoid unrealistic speeds
+	return -1;
+}
+
+function baseTicksForItemAtXP(complexity: number, xp: number): number {
+	const k = kForExperience(xp);
+	return Math.max(1, 2 * complexity + k);
+}
+
+// Public helper so UI and logic share the same proficiency curve
+export function getProficiencySpeedMultiplier(
+	proficiencyCount: number,
+): number {
+	const count = Math.max(0, proficiencyCount || 0);
+	// Spec:
+	// - 0 items: ~2/3 speed (takes 1.5× ticks)
+	// - 50 items: baseline 1.0× speed
+	// - Cap at 2.0× speed (half the ticks) reached by ~200 items
+	const startSpeed = 2 / 3; // ≈0.6667
+	const maxSpeed = 2.0;
+	const progress = Math.min(1, count / 200);
+	const multiplier = startSpeed + (maxSpeed - startSpeed) * progress;
+	return Math.max(startSpeed, Math.min(maxSpeed, multiplier));
+}
+
+// Map popularity to an effective target XP for customer expectations.
+// 20% → 200xp, 60% → 600xp, 100% → 1000xp; linearly scaled and clamped.
+function effectiveXpFromPopularity(popularity: number): number {
+	const xp = popularity * 10; // 20→200, 60→600, 100→1000
+	return Math.max(200, Math.min(1000, xp));
+}
+
+// Compute expected patience (in ticks) for an order, given current popularity and vibe.
+// Includes ±20% per-order randomness, then applies vibe last.
+function computePatienceTicks(
+	items: menuItem[],
+	popularity: number,
+	vibe: number,
+): number {
+	const popXp = effectiveXpFromPopularity(popularity);
+	const base = items.reduce(
+		(sum, item) => sum + baseTicksForItemAtXP(item.complexity, popXp),
+		0,
+	);
+	const rng = 0.8 + Math.random() * 0.4; // 0.8–1.2
+	const preVibe = base * rng;
+	const vibeMultiplier = 1 + (vibe - 1) / 2; // 1.0→×1, 2.0→×1.5, 5.0→×3
+	return Math.max(1, Math.round(preVibe * vibeMultiplier));
+}
+
 let randomFirstNames = [
 	'Alex',
 	'Jordan',
@@ -209,26 +278,26 @@ export function workOnOrder(order: order, game: db): db {
 		}
 	}
 
-	// Progress work on the current item
+	// Progress work on the current item (XP + proficiency + equipment)
 	if (order.completion < 100) {
-		// Progress calculation - adjusted for faster completion times
-		const baseProgress = (employee.experience / 100) * 5.2;
-		const complexityPenalty = 1 - (currentItem.complexity - 1) * 0.1;
 		const proficiencyCount =
 			employee.menuItemProficiency?.[currentItem.name] || 0;
-		const proficiencyMultiplier = Math.min(
-			2.5,
-			0.012 * Math.pow(proficiencyCount, 0.68) + 0.5,
-		);
+		const proficiencyMultiplier =
+			getProficiencySpeedMultiplier(proficiencyCount);
 		const happinessMultiplier = employee.happiness || 1.0;
-		const progress =
-			baseProgress *
-			complexityPenalty *
-			proficiencyMultiplier *
-			happinessMultiplier *
-			totalSpeedMultiplier;
+
+		const baseTicks = baseTicksForItemAtXP(
+			currentItem.complexity,
+			employee.experience,
+		);
+		const effectiveTicks = Math.max(
+			1,
+			baseTicks /
+				(totalSpeedMultiplier * proficiencyMultiplier * happinessMultiplier),
+		);
+		const progressPerTick = 100 / effectiveTicks;
 		order.completion =
-			Math.round(Math.min(100, order.completion + progress) * 10) / 10;
+			Math.round(Math.min(100, order.completion + progressPerTick) * 10) / 10;
 
 		// Sync order completion in db.orders
 		const dbOrder = game.orders.find((o) => o.id === order.id);
@@ -295,80 +364,32 @@ export function workOnOrder(order: order, game: db): db {
 		}
 
 		// --- ENTIRE ORDER IS COMPLETE ---
-		const originalOrderItems = order.originalItems || [currentItem]; // Fallback for old saves
+		const actualTicks = order.ticksToComplete;
+		const expectedFast = order.customerPatience; // baseline expectation for +1
+		console.log('[Order complete]', {
+			expectedTicks: expectedFast,
+			completedTicks: actualTicks,
+		});
+		const expectedSlow = Math.round(order.customerPatience * 1.5); // neutral up to 1.5×, else -1
 
-		// Calculate customer satisfaction based on total completion time
-		const employeeProgress = (employee.experience / 100) * 7.5;
-		const totalExpectedTicks = originalOrderItems.reduce((total, item) => {
-			const complexityPenalty = 1 - (item.complexity - 1) * 0.1;
-			const expectedProgress = employeeProgress * complexityPenalty;
-			return total + Math.ceil(100 / expectedProgress);
-		}, 0);
-
-		const timeRatio = order.ticksToComplete / totalExpectedTicks;
-		const patienceFactor = order.customerPatience / 250;
-		let popularityExpectationMultiplier;
-		if (game.popularity < 65) {
-			popularityExpectationMultiplier = 0.5 + (game.popularity / 50) * 0.45;
-		} else {
-			popularityExpectationMultiplier =
-				0.7 + ((game.popularity - 50) / 50) * 0.35;
-		}
-
-		const experienceBonus = Math.min(0.3, (employee.experience - 100) / 900);
-		const baseFastThreshold =
-			(0.8 + experienceBonus) * popularityExpectationMultiplier;
-		const baseSlowThreshold =
-			(1.5 + experienceBonus) * popularityExpectationMultiplier;
-
-		const fastThreshold = baseFastThreshold * patienceFactor;
-		const slowThreshold = baseSlowThreshold * patienceFactor;
-
-		if (timeRatio <= fastThreshold) {
-			const experienceRatio = employee.experience / 500;
-			const baseChance = Math.min(0.5, 0.2 + experienceRatio * 0.15);
-
-			let popularityModifier;
-			if (game.popularity < 35) {
-				const lowPopularityBonus = (35 - game.popularity) * 0.4;
-				popularityModifier = 1 + lowPopularityBonus / 100;
-			} else {
-				const popularityPenalty = Math.pow((game.popularity - 50) / 50, 1.2);
-				popularityModifier = 1 - popularityPenalty * 0.25;
-			}
-			const finalChance = baseChance * popularityModifier;
-
-			const complexityBonus =
-				(originalOrderItems.reduce((sum, i) => sum + i.complexity, 0) /
-					originalOrderItems.length -
-					1) *
-				0.03;
-			const patienceBonus = ((order.customerPatience - 400) / 600) * 0.04;
-			const totalChance = Math.max(
-				0.04,
-				finalChance + complexityBonus + patienceBonus,
+		if (actualTicks <= expectedFast) {
+			const speedRatio = Math.max(
+				0,
+				Math.min(1, (expectedFast - actualTicks) / Math.max(1, expectedFast)),
 			);
-
-			if (Math.random() < totalChance) {
+			const chance = 0.7 + 0.25 * speedRatio; // 70–95%
+			if (Math.random() < chance) {
 				game.popularity += 1;
 			}
-		} else if (timeRatio > slowThreshold) {
-			const experienceRatio = employee.experience / 500;
-			const baseChance = Math.max(0.3, 0.6 - experienceRatio * 0.2);
-
-			let popularityBonus;
-			if (game.popularity < 50) {
-				popularityBonus = (50 - game.popularity) * 1.0;
-			} else {
-				popularityBonus = ((100 - game.popularity) / 100) * 0.2;
-			}
-			const finalChance = baseChance - popularityBonus;
-
-			if (Math.random() < finalChance) {
+		} else if (actualTicks > expectedSlow) {
+			const delayRatio = Math.max(
+				0,
+				Math.min(1, (actualTicks - expectedSlow) / Math.max(1, expectedSlow)),
+			);
+			const chance = 0.4 + 0.2 * delayRatio; // 40–60%
+			if (Math.random() < chance) {
 				game.popularity -= 1;
-				currentTip.set(
-					`${order.customer} got their order too slowly. Consider hiring more staff!`,
-				);
+				currentTip.set(`${order.customer} expected their order faster`);
 				let rand = Math.random();
 				const mehSound =
 					rand < 0.25
@@ -379,17 +400,13 @@ export function workOnOrder(order: order, game: db): db {
 						? new Audio('/meh3.mp3')
 						: new Audio('/meh4.wav');
 				mehSound.currentTime = 0;
-				mehSound.volume = 0.4;
+				mehSound.volume = 0.2;
 				mehSound.play();
 			}
 		} else {
-			const neutralChance = 0.15;
+			const neutralChance = 0.1; // small swing in neutral range
 			if (Math.random() < neutralChance) {
-				if (Math.random() < 0.5) {
-					game.popularity += 1;
-				} else {
-					game.popularity -= 1;
-				}
+				game.popularity += Math.random() < 0.5 ? 1 : -1;
 			}
 		}
 
@@ -477,21 +494,12 @@ export function generateOrder(): order | null {
 		orderItems.push(menuItem);
 	}
 
-	// Adjust customer patience based on popularity
-	const currentPopularity = db.popularity;
-	let patienceRange = 800 - 800; // Default range
-	let patienceMin = 200;
-
-	if (currentPopularity < 50) {
-		const patienceBoost = (50 - currentPopularity) * 8; // 0-200 boost
-		patienceMin = 400 + patienceBoost;
-		patienceRange = 1000 - patienceMin;
-	}
-
-	// Apply vibe effect to customer patience (1.0 is standard, >1.0 makes customers more patient, <1.0 less patient)
-	const basePatienceValue =
-		Math.floor(Math.random() * patienceRange) + patienceMin;
-	const vibeAdjustedPatience = Math.floor(basePatienceValue * db.vibe);
+	// Compute patience from popularity, items, ±20% rng, then apply vibe last
+	const patienceTicks = computePatienceTicks(
+		orderItems,
+		db.popularity,
+		db.vibe,
+	);
 
 	return {
 		id: db.orders.length + Date.now(), // More unique ID
@@ -500,7 +508,7 @@ export function generateOrder(): order | null {
 		originalItems: [...orderItems],
 		completion: 0,
 		ticksToComplete: 0,
-		customerPatience: vibeAdjustedPatience,
+		customerPatience: patienceTicks,
 	};
 }
 

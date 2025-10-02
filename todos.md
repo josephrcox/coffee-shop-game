@@ -6,4 +6,11 @@
 - [ ] Café management
 
 ### Feedback from Sam
-- [ ] 1 missing should have a hover
+- [x] 1 missing should have a hover
+
+
+
+
+
+### Customer patience and popularity
+Complexity:

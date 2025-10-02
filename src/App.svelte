@@ -91,7 +91,9 @@
 				e.preventDefault();
 				showDeveloperModal.set(true);
 			} else if (e.key === 'p' || e.key === 'P') {
-				// Prevent default to avoid typing 'p' in input fields
+				if ($databaseStore.tick > 0) {
+					return;
+				}
 				e.preventDefault();
 				paused.set(!$paused);
 			} else if (e.key === 'Escape') {
@@ -133,7 +135,7 @@
 
 	<!-- Right sidebar: Full height from top to bottom -->
 	<div class="w-80 bg-cardBackground/90 border-l border-info/30 flex flex-col">
-		<div class="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+		<div class="flex-1 overflow-y-auto p-6 pt-4 flex flex-col gap-4">
 			<!-- Menu Section -->
 			<div class="flex flex-col">
 				<div class="flex flex-row gap-2 mb-3">

@@ -119,7 +119,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
 		id: 9,
 		targetId: 'cafe-settings',
 		message:
-			"Finally, customize your Café. Upgrades improve your shop's vibe, which boosts demand and customer enjoyment.",
+			"Finally, you can customize your Café. Upgrades improve your shop's vibe, which boosts demand and customer enjoyment.",
 		manual: true,
 	},
 ];

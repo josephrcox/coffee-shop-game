@@ -476,34 +476,6 @@
 					<br />
 					It's up to you!
 				</p>
-				<div class="flex flex-col gap-2">
-					<div>
-						<h4>Popularity</h4>
-						<ul class="list-disc list-inside ml-2">
-							<li>Changes based on order satisfaction.</li>
-							<li>
-								Impacts how patient customers are. The more popular, the higher
-								the expectations.
-							</li>
-						</ul>
-						<h4 class="mt-4">Demand</h4>
-						<ul class="list-disc list-inside ml-2">
-							<li>Increases as you add more menu items.</li>
-							<li>
-								Impacts how many customers you get. The more demand, the more
-								customers you get.
-							</li>
-						</ul>
-						<h4 class="mt-4">Vibe</h4>
-						<ul class="list-disc list-inside ml-2">
-							<li>Increases through Café customization upgrades.</li>
-							<li>
-								Affects how many orders you get, and greatly improves customer
-								patience!
-							</li>
-						</ul>
-					</div>
-				</div>
 			</div>
 			<div class="flex flex-row justify-end">
 				<button

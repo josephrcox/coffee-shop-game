@@ -267,25 +267,6 @@ export const quests: quest[] = [
 		isCompleted: (db) => db.staff.length >= 4, // 3 employees + owner
 	},
 	{
-		id: 'customer-satisfaction',
-		name: 'Complete 10 orders without any failures',
-		completed: false,
-		showingCompletion: false,
-		reward: {
-			cash: 0,
-			popularity: 5,
-		},
-		isCompleted: (db) => {
-			// This would need tracking of consecutive successful orders
-			// For now, simplified to recent orders completion
-			const recentOrders = db.orders.slice(-10);
-			return (
-				recentOrders.length >= 10 &&
-				recentOrders.every((order) => order.completion === 100)
-			);
-		},
-	},
-	{
 		id: 'month-milestone',
 		name: 'Stay in business for 30 days',
 		completed: false,

@@ -132,7 +132,7 @@
 			<!-- Café Customization View -->
 			<div class="max-w-4xl pb-8" data-nux-id="cafe-settings">
 				{#if $databaseStore.cafeSettings && $databaseStore.cafeSettings.length > 0}
-					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
 						{#each $databaseStore.cafeSettings as setting, idx}
 							{@const current = setting.levels[setting.level]}
 							{@const next = setting.levels[setting.level + 1]}

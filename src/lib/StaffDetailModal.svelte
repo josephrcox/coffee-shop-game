@@ -6,16 +6,13 @@
 		paused,
 	} from './store';
 	import FullscreenModal from './FullscreenModal.svelte';
+	import { getProficiencySpeedMultiplier } from './utils';
 
 	function getProficiencyMultiplier(
 		proficiencyCount: number | undefined,
 	): number {
-		if (proficiencyCount === undefined) proficiencyCount = 0;
-		const multiplier = Math.min(
-			2.5,
-			0.022 * Math.pow(proficiencyCount, 0.68) + 0.5,
-		);
-		// return it formatted to 2 decimal places
+		const count = proficiencyCount ?? 0;
+		const multiplier = getProficiencySpeedMultiplier(count);
 		return Math.round(multiplier * 100) / 100;
 	}
 
@@ -163,30 +160,6 @@
 				</div>
 			</div>
 
-			<!-- Performance Stats -->
-			<div
-				class="bg-gradient-to-br from-cardBackground to-modalBackground border-2 border-accent/40 rounded-xl p-6 shadow-lg"
-			>
-				<div class="flex items-center gap-3 mb-4">
-					<div class="text-2xl">📊</div>
-					<h2 class="text-xl font-bold text-accent">Performance Statistics</h2>
-				</div>
-				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-					<div class="text-center">
-						<div class="text-2xl font-bold text-success">
-							{getTotalItemsMade()}
-						</div>
-						<div class="text-sm text-textSecondary">Total Items Made</div>
-					</div>
-					<div class="text-center">
-						<div class="text-2xl font-bold text-special">
-							{Math.floor($selectedEmployee.experience / 100)}
-						</div>
-						<div class="text-sm text-textSecondary">Skill Level</div>
-					</div>
-				</div>
-			</div>
-
 			<!-- Proficiency Section -->
 			<div class="space-y-4">
 				<div class="flex items-center gap-3">
@@ -198,14 +171,6 @@
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						{#each Object.entries($selectedEmployee.menuItemProficiency).sort(([, a], [, b]) => b - a) as [name, count]}
 							{@const speedMultiplier = getProficiencyMultiplier(count)}
-							{@const proficiencyLevel =
-								count < 5
-									? 'Novice'
-									: count < 15
-										? 'Skilled'
-										: count < 30
-											? 'Expert'
-											: 'Master'}
 							{@const fromColor =
 								count < 5
 									? 'from-warning/10'
@@ -228,11 +193,6 @@
 							>
 								<div class="flex items-center justify-between mb-3">
 									<h4 class="font-bold text-textPrimary text-sm">{name}</h4>
-									<div
-										class="bg-accent/20 text-accent px-2 py-1 rounded-full text-xs font-bold"
-									>
-										{proficiencyLevel}
-									</div>
 								</div>
 
 								<div class="space-y-2">
@@ -244,8 +204,13 @@
 									</div>
 									<div class="flex justify-between items-center">
 										<span class="text-xs text-textSecondary">Speed Bonus:</span>
-										<span class="text-sm font-bold text-success"
-											>+{((speedMultiplier - 1) * 100).toFixed(0)}%</span
+										<span
+											class="text-sm font-bold {speedMultiplier > 1
+												? 'text-success'
+												: speedMultiplier === 1
+													? 'text-textPrimary'
+													: 'text-error'}"
+											>{((speedMultiplier - 1) * 100).toFixed(0)}%</span
 										>
 									</div>
 								</div>
@@ -259,7 +224,7 @@
 										></div>
 									</div>
 									<div class="text-xs text-textSecondary mt-1 text-center">
-										{count}/50 for maximum speed
+										{count}/50 for proficiency, 200 for expert.
 									</div>
 								</div>
 							</div>

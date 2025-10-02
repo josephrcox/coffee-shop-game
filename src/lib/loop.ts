@@ -38,6 +38,8 @@ export function gameLoop() {
 	let db = get(databaseStore);
 	db.tick += 1;
 
+	checkNux(db.tick);
+
 	if (db.staff.length === 0) {
 		db = startGame(db);
 		databaseStore.set(db);
@@ -257,6 +259,14 @@ export function gameLoop() {
 	db = fixVariables(db);
 
 	databaseStore.set(db);
+}
+
+function checkNux(tick: number) {
+	if (tick === 1200) {
+		alert(
+			'TIP: Employees have to make a drink a few dozen times before they are good at it. You can click on an employee to see their proficiency at each menu item. ',
+		);
+	}
 }
 
 function fixVariables(game: db) {
