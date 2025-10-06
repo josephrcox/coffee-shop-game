@@ -35,11 +35,8 @@
 	import StaffDetailModal from './StaffDetailModal.svelte';
 	import PriceAdjustmentModal from './PriceAdjustmentModal.svelte';
 	import Pill from './Pill.svelte';
+	import Sign from './Sign.svelte';
 	import { tutorial } from './tutorial';
-
-	onMount(() => {
-		start();
-	});
 
 	// Drag and drop functionality
 	let draggedIndex: number | null = null;
@@ -171,11 +168,13 @@
 
 <div
 	class="flex flex-row w-full {$paused
-		? 'bg-error/40 text-textPrimary border-interactive'
-		: 'bg-cardBackground/80 text-textPrimary'} px-6 py-6 h-fit'}"
+		? 'bg-red-900 transition-all duration-200 text-textPrimary border-interactive'
+		: 'bg-cardBackground/80 text-textPrimary'} px-6 h-fit'}"
 >
 	<!-- Game Controls & Stats Column (Left) -->
-	<div class="flex flex-col w-64">
+	<div
+		class="flex flex-col min-w-52 w-fit border-r-2 border-black pr-6 mr-6 py-4"
+	>
 		<div class="flex flex-row items-center gap-2">
 			<button
 				class="btn btn-sm w-min pr-0 pl-0 {$paused
@@ -193,7 +192,7 @@
 				$gameSpeed === 200
 					? 'bg-info/80 text-textPrimary hover:bg-info'
 					: !$paused && $gameSpeed === 50
-						? 'bg-red-500/80 text-textPrimary hover:bg-red-500 rounded-2xl'
+						? 'bg-red-900/80 text-textPrimary hover:bg-red-500 rounded-2xl'
 						: 'bg-cardBackground/60 text-textSecondary hover:bg-cardBackground/80'} "
 				on:click={() => {
 					$paused = false;
@@ -265,7 +264,7 @@
 				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<!-- svelte-ignore a11y-no-static-element-interactions -->
 				<kbd
-					class="kbd kbd-xs w-fit bg-yellow-800 opacity-50 hover:opacity-100 text-white cursor-pointer"
+					class="kbd kbd-xs w-fit bg-warning opacity-50 hover:opacity-100 text-textPrimary cursor-pointer"
 					on:click={() => (helpMenuOpen = !helpMenuOpen)}
 				>
 					💡
@@ -273,64 +272,56 @@
 			</div>
 		</div>
 	</div>
-	<div class="grid grid-cols-3 gap-8 w-full">
-		<!-- Staff Column -->
-		<div class="flex flex-col">
-			<div class="flex flex-row gap-2">
-				<span class="font-semibold pb-2 text-accent">Staff</span>
-				<button
-					class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
-					data-nux-id="open-hiring"
+	<!-- Signs Row -->
+	<div class="flex flex-row gap-6 w-full mt-4">
+		<!-- Staff Sign -->
+		<Sign
+			title="Staff"
+			showButton={true}
+			buttonText="Hire"
+			onButtonClick={() => {
+				$paused = true;
+				$showHiringModal = true;
+			}}
+		>
+			{#each $databaseStore.staff as employee, index}
+				<!-- svelte-ignore a11y-no-static-element-interactions -->
+				<!-- svelte-ignore a11y-click-events-have-key-events -->
+				<div
+					class="flex flex-row gap-1 cursor-pointer duration-200 rounded {draggedOverIndex ===
+					index
+						? 'bg-info/30'
+						: ''}"
+					draggable="true"
+					on:dragstart={(e) => handleDragStart(e, index)}
+					on:dragover={(e) => handleDragOver(e, index)}
+					on:dragenter={(e) => handleDragEnter(e, index)}
+					on:drop={(e) => handleDrop(e, index)}
+					on:dragend={handleDragEnd}
+					on:mouseenter={() => (hoveredEmployeeIndex = index)}
+					on:mouseleave={() => (hoveredEmployeeIndex = null)}
 					on:click={() => {
+						$selectedEmployee = employee;
 						$paused = true;
-						$showHiringModal = true;
+						$showStaffDetailModal = true;
 					}}
 				>
-					Hire
-				</button>
-			</div>
-			<div class="pb-4 flex flex-col gap-1">
-				{#each $databaseStore.staff as employee, index}
-					<!-- svelte-ignore a11y-no-static-element-interactions -->
-					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<div
-						class="flex flex-row gap-1 cursor-pointer duration-200 rounded {draggedOverIndex ===
-						index
-							? 'bg-info/30'
-							: ''}"
-						draggable="true"
-						on:dragstart={(e) => handleDragStart(e, index)}
-						on:dragover={(e) => handleDragOver(e, index)}
-						on:dragenter={(e) => handleDragEnter(e, index)}
-						on:drop={(e) => handleDrop(e, index)}
-						on:dragend={handleDragEnd}
-						on:mouseenter={() => (hoveredEmployeeIndex = index)}
-						on:mouseleave={() => (hoveredEmployeeIndex = null)}
-						on:click={() => {
-							$selectedEmployee = employee;
-							$paused = true;
-							$showStaffDetailModal = true;
-						}}
-					>
-						<div class="flex flex-row items-center gap-2 w-full">
-							<div class="flex flex-row items-center w-full gap-1">
-								<span class="text-xs"
-									>{getHappinessEmoji(employee.happiness, true)}</span
-								>
-								<div class=" text-sm">{employee.name}</div>
-							</div>
-							<div
-								class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md"
+					<div class="flex flex-row items-center gap-2 w-full">
+						<div class="flex flex-row items-center w-full gap-1">
+							<span class="text-xs text-white"
+								>{getHappinessEmoji(employee.happiness, true)}</span
 							>
-								{employee.experience}xp
-							</div>
+							<div class="text-sm text-white">{employee.name}</div>
+						</div>
+						<div class="text-xs bg-success/70 text-white px-1.5 rounded-md">
+							{employee.experience}xp
 						</div>
 					</div>
-				{/each}
-			</div>
+				</div>
+			{/each}
 			{#if $databaseStore.managers.length > 0}
-				<div class="flex flex-col gap-1">
-					<span class="font-semibold text-accent">Managers</span>
+				<div class="flex flex-col gap-1 mt-2">
+					<span class="font-semibold text-white">Managers</span>
 					{#each $databaseStore.managers as manager, index}
 						<div
 							class="flex flex-row items-center justify-between gap-1 w-full"
@@ -339,14 +330,12 @@
 								class="flex flex-row items-center justify-between w-full gap-1"
 							>
 								<div class="flex flex-row items-center w-full gap-1">
-									<span class="text-xs"
+									<span class="text-xs text-white"
 										>{getHappinessEmoji(manager.happiness, true)}</span
 									>
-									<span>{manager.name}</span>
+									<span class="text-white">{manager.name}</span>
 								</div>
-								<div
-									class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md"
-								>
+								<div class="text-xs bg-success/70 text-white px-1.5 rounded-md">
 									{manager.experience}xp
 								</div>
 							</div>
@@ -354,25 +343,22 @@
 					{/each}
 				</div>
 			{/if}
-		</div>
-
-		<!-- Equipment Column (Center) -->
-		<div class="flex flex-col">
-			<div class="flex flex-row gap-2">
-				<span class="font-semibold pb-2 text-accent">Equipment</span>
-				<button
-					class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
-					on:click={() => {
-						$paused = true;
-						$showShopModal = true;
-					}}
-				>
-					Shop
-				</button>
-			</div>
+		</Sign>
+		<!-- Equipment Sign -->
+		<Sign
+			title="Equipment"
+			showButton={true}
+			buttonText="Shop"
+			onButtonClick={() => {
+				$paused = true;
+				$showShopModal = true;
+			}}
+		>
 			{#each $databaseStore.ownedEquipment as equipment, index}
 				<div class="flex flex-row items-center justify-between gap-1 w-full">
-					<span class="overflow-hidden text-ellipsis whitespace-nowrap">
+					<span
+						class="overflow-hidden text-ellipsis whitespace-nowrap text-white"
+					>
 						{equipment.name}
 					</span>
 					<div
@@ -380,9 +366,7 @@
 						title="Quality: {equipment.quality}%"
 					>
 						{#if equipment.quality >= 30}
-							<div
-								class="text-xs bg-success/70 text-textPrimary px-1.5 rounded-md"
-							>
+							<div class="text-xs bg-success/70 text-white px-1.5 rounded-md">
 								Good
 							</div>
 						{:else}
@@ -396,30 +380,24 @@
 					</div>
 				</div>
 			{/each}
-		</div>
+		</Sign>
 
-		<!-- Inventory Column (Right) -->
-		<div class="flex flex-col">
-			<div class="flex flex-row gap-2">
-				<span class="font-semibold pb-2 text-accent">Inventory</span>
-				<button
-					class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
-					data-nux-id="open-shop"
-					on:click={() => {
-						$paused = true;
-						$showShopModal = true;
-					}}
-				>
-					Shop
-				</button>
-			</div>
-
+		<!-- Inventory Sign -->
+		<Sign
+			title="Inventory"
+			showButton={true}
+			buttonText="Shop"
+			onButtonClick={() => {
+				$paused = true;
+				$showShopModal = true;
+			}}
+		>
 			{#each $databaseStore.inventory as item, index}
 				{@const purchasableItem = purchasableItems.find(
 					(p) => p.name === item.name,
 				)}
 				<div class="flex flex-row items-center justify-between pb-1">
-					<span>{item.name}</span>
+					<span class="text-white">{item.name}</span>
 					<Pill
 						variant={item.quantity > 25 ? 'success' : 'warning'}
 						normalContent={item.quantity.toString()}
@@ -442,7 +420,7 @@
 					</Pill>
 				</div>
 			{/each}
-		</div>
+		</Sign>
 	</div>
 </div>
 
@@ -456,7 +434,9 @@
 				<h3 class="text-2xl font-bold text-textPrimary flex items-center gap-2">
 					💡 Info
 				</h3>
-				<p class="text-black bg-white rounded-lg p-4 text-center my-4">
+				<p
+					class="text-textPrimary bg-mainBackground rounded-lg p-4 text-center my-4"
+				>
 					All of these stats greatly impact your business performance. Improve
 					popularity & demand to get more customers, and improve vibe to make
 					those customers happier.
@@ -477,7 +457,7 @@
 			</div>
 			<div class="flex flex-row justify-end">
 				<button
-					class="btn btn-md bg-success/80 w-fit text-textPrimary hover:bg-success border-success/50"
+					class="btn btn-md bg-success/80 w-fit text-white hover:bg-success border-success/50"
 					on:click={() => (helpMenuOpen = false)}
 				>
 					Got it!

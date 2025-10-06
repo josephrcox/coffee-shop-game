@@ -102,14 +102,14 @@
 									>
 									<td class="py-2 px-2 text-center">
 										<span
-											class="bg-success/80 text-textPrimary px-3 py-1 rounded-full font-bold text-xs"
+											class="bg-success/80 text-white px-3 py-1 rounded-full font-bold text-xs"
 										>
 											${menuItem.price}
 										</span>
 									</td>
 									<td class="py-2 px-2 text-center w-24">
 										<button
-											class="btn btn-xs bg-error hover:bg-error/80 text-textPrimary border-error/50 w-28"
+											class="btn btn-xs bg-error hover:bg-error/80 text-white border-error/50 w-28"
 											on:click={() => {
 												$databaseStore.menu = $databaseStore.menu.filter(
 													(item) => item.name !== menuItem.name,
@@ -144,7 +144,7 @@
 			<div>
 				<div class="flex items-center gap-2 mb-3">
 					<div class="text-lg">🎯</div>
-					<h2 class="text-lg font-bold text-accent">Available Recipes</h2>
+					<h2 class="text-lg font-bold text-subheading">Available Recipes</h2>
 				</div>
 				<div class="overflow-x-auto">
 					<table class="w-full text-sm">
@@ -185,7 +185,7 @@
 									>
 									<td class="py-2 px-2 text-center">
 										<span
-											class="bg-accent/80 text-mainBackground px-3 py-1 rounded-full font-bold text-xs"
+											class="bg-accent/80 text-textPrimary px-3 py-1 rounded-full font-bold text-xs"
 										>
 											${item.price}
 										</span>
@@ -207,7 +207,7 @@
 									</td>
 									<td class="py-2 px-2 text-center w-32">
 										<button
-											class="btn btn-xs bg-special hover:bg-special/80 text-textPrimary border-special/50 w-26"
+											class="btn btn-xs bg-special hover:bg-special/80 text-white border-special/50 w-26"
 											on:click={() => {
 												$databaseStore.menu = [...$databaseStore.menu, item];
 											}}

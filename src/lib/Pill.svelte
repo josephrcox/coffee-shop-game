@@ -33,7 +33,7 @@
 
 {#if tooltip}
 	<button
-		class="tooltip tooltip-content tooltip-secondary tooltip-left"
+		class="tooltip tooltip-content tooltip-secondary tooltip-left duration-75"
 		data-tip={tooltip}
 	>
 		<!-- svelte-ignore a11y-no-static-element-interactions -->

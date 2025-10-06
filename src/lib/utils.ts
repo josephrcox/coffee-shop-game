@@ -12,7 +12,11 @@ import {
 	type manager,
 	Trait,
 } from './objects/types';
-import type { cafeSetting, cafeSettingLevel } from './objects/types';
+import type {
+	cafeSetting,
+	cafeSettingLevel,
+	dailyStatSnapshot,
+} from './objects/types';
 
 // --- Expectations & Speed helpers (popularity ↔ patience, XP ↔ ticks) ---
 // These helpers implement the product spec for gradual scaling.
@@ -173,6 +177,7 @@ export function startGame(game: db): db {
 	const name = get(playerName) || 'You';
 	if (name) {
 		const firstEmployee = {
+			id: 0,
 			name: name,
 			dailyWage: 0,
 			experience: Math.floor(Math.random() * 250 + 250),
@@ -200,7 +205,6 @@ export function startGame(game: db): db {
 	game.startingCash = game.cash;
 	game.quests = quests;
 	game.managers = [];
-	game.tick = 1001;
 	return game;
 }
 
@@ -517,47 +521,50 @@ export function generateOrder(): order | null {
 	};
 }
 
-export function searchForEmployee(): employee[] {
-	let availableEmployees: employee[] = [];
-	for (let i = 0; i < 3; i++) {
-		let experience = Math.floor(Math.random() * 1000 + 10);
-		if (experience > 1000) experience = 1000;
-
-		// Calculate salary based on experience with exponential scaling
-		// Base salary: 50-80 for low experience
-		// High experience (750+) should cost 300+
-		const baseSalary = 60 + Math.floor(Math.random() * 31);
-		const experienceMultiplier = Math.pow(experience / 1000, 1.6); // Exponential scaling
-		const experienceBonus = Math.floor(experienceMultiplier * 400); // Max 400 bonus at 1000 XP
-
-		let employee = {
-			name: generateName(),
-			dailyWage: baseSalary + experienceBonus,
-			experience: experience,
-			currentOrder: null,
-			menuItemProficiency: {},
-			happiness: Math.random() * 1.2 + 0.4,
-			dailyMenuItemsMade: [],
-		};
-		availableEmployees.push(employee);
-	}
-
-	return availableEmployees;
+function getId(): number {
+	return Math.floor(Math.random() * 1000000);
 }
 
-export function searchForManagers(): manager[] {
-	const db = get(databaseStore);
+export function searchForEmployee(db: db): db {
+	let availableEmployees: employee[] = db.availableEmployees;
+	let experience = Math.floor(Math.random() * 1000 + 10);
+	if (experience > 1000) experience = 1000;
+
+	// Calculate salary based on experience with exponential scaling
+	// Base salary: 50-80 for low experience
+	// High experience (750+) should cost 300+
+	const baseSalary = 60 + Math.floor(Math.random() * 31);
+	const experienceMultiplier = Math.pow(experience / 1000, 1.6); // Exponential scaling
+	const experienceBonus = Math.floor(experienceMultiplier * 400); // Max 400 bonus at 1000 XP
+
+	let employee = {
+		id: getId(),
+		name: generateName(),
+		dailyWage: baseSalary + experienceBonus,
+		experience: experience,
+		currentOrder: null,
+		menuItemProficiency: {},
+		happiness: Math.random() * 1.2 + 0.4,
+		dailyMenuItemsMade: [],
+	};
+	availableEmployees.push(employee);
+
+	db.availableEmployees = availableEmployees;
+	return db;
+}
+
+export function searchForManagers(db: db): db {
 	const hiredTraits = db.managers.map((m) => m.trait);
 	const availableTraits = Object.values(Trait).filter(
 		(trait) => !hiredTraits.includes(trait),
 	);
 
-	if (availableTraits.length === 0) return [];
+	if (availableTraits.length === 0) return db;
 
 	const shuffledTraits = [...availableTraits].sort(() => Math.random() - 0.5);
 	const numToGenerate = Math.min(3, availableTraits.length);
 
-	return Array.from({ length: numToGenerate }, (_, i) => {
+	const managers: manager[] = Array.from({ length: numToGenerate }, (_, i) => {
 		const experience = Math.floor(Math.random() * 1000 + 10);
 		const wage = Math.floor(
 			Math.random() * 200 + Math.pow(experience / 1000, 1.5) * 400 + 100,
@@ -571,6 +578,9 @@ export function searchForManagers(): manager[] {
 			trait: shuffledTraits[i],
 		};
 	});
+
+	db.availableManagers = managers;
+	return db;
 }
 
 export function checkWageHealth(employee: employee): number {
@@ -926,4 +936,106 @@ export function calculateNetProfitToday(game: db): number {
 
 export function calculateGrossProfitToday(game: db): number {
 	return game.stats.profitToday;
+}
+
+// --- Time formatting utilities ---
+export function formatTickAsTime(tick: number): string {
+	// Day starts at 6am (0%) and ends at 6pm (100%)
+	// 1000 ticks = 1 day, so 1000 ticks = 12 hours (6am to 6pm)
+	const dayProgress = (tick % 1000) / 1000; // 0 to 1
+	const totalMinutes = dayProgress * 12 * 60; // Total minutes from 6am (0 to 720)
+
+	// Round to nearest 1-minute increment
+	const roundedMinutes = Math.round(totalMinutes);
+
+	// Calculate hour and minute
+	const hour = 6 + Math.floor(roundedMinutes / 60);
+	const minute = roundedMinutes % 60;
+
+	// Convert to 12-hour format
+	const isPM = hour >= 12;
+	const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+
+	// Format with leading zero for minutes
+	const minutesStr = minute.toString().padStart(2, '0');
+	const period = isPM ? 'pm' : 'am';
+
+	return `${displayHour}:${minutesStr}${period}`;
+}
+
+// --- Stats display helpers (reactive-friendly pure functions) ---
+export function getYesterdaySnapshot(game: db): dailyStatSnapshot | null {
+	const history = game?.stats?.history;
+	if (!Array.isArray(history) || history.length === 0) return null;
+	return history[history.length - 1] ?? null;
+}
+
+function getYesterdayAndPrior(game: db): {
+	yesterday: dailyStatSnapshot | null;
+	prior: dailyStatSnapshot | null;
+} {
+	const history = game?.stats?.history || [];
+	const len = history.length;
+	return {
+		yesterday: len >= 1 ? history[len - 1] : null,
+		prior: len >= 2 ? history[len - 2] : null,
+	};
+}
+
+export function getCashDisplay(game: db): { value: number; delta: number } {
+	const { yesterday, prior } = getYesterdayAndPrior(game);
+	if (game.tick % 1000 === 0 && yesterday) {
+		const value = Math.round(yesterday.cash);
+		const base = Math.round(prior ? prior.cash : yesterday.cash);
+		return { value, delta: value - base };
+	}
+	const value = Math.round(game.cash);
+	const previous = yesterday ? Math.round(yesterday.cash) : value;
+	return { value, delta: value - previous };
+}
+
+export function getProfitDisplay(game: db): { value: number; delta: number } {
+	const { yesterday, prior } = getYesterdayAndPrior(game);
+	if (game.tick % 1000 === 0 && yesterday) {
+		const value = Math.round(yesterday.profit);
+		const base = Math.round(prior ? prior.profit : yesterday.profit);
+		return { value, delta: value - base };
+	}
+	const yesterdayNet =
+		yesterday?.profit ?? Math.round(game.stats.profitYesterday);
+	const todayNet = Math.round(calculateNetProfitToday(game));
+	const value = todayNet;
+	return { value, delta: value - yesterdayNet };
+}
+
+export function getOrdersDisplay(game: db): { value: number; delta: number } {
+	const { yesterday, prior } = getYesterdayAndPrior(game);
+	if (game.tick % 1000 === 0 && yesterday) {
+		const value = yesterday.orders;
+		const base = prior ? prior.orders : value;
+		return { value, delta: value - base };
+	}
+	const value = game.stats.ordersToday;
+	const delta = game.stats.ordersToday - (yesterday ? yesterday.orders : 0);
+	return { value, delta };
+}
+
+export function getPopularityDisplay(game: db): {
+	value: number;
+	delta: number;
+} {
+	const { yesterday, prior } = getYesterdayAndPrior(game);
+	if (game.tick % 1000 === 0 && yesterday) {
+		const value = Math.round(yesterday.popularity);
+		const base = Math.round(prior ? prior.popularity : yesterday.popularity);
+		return { value, delta: value - base };
+	}
+	const value = Math.round(game.popularity);
+	const previous = Math.round(yesterday ? yesterday.popularity : value);
+	return { value, delta: value - previous };
+}
+
+export function formatSignedDelta(n: number): string {
+	if (n === 0) return '0';
+	return n > 0 ? `+${n}` : `${n}`;
 }

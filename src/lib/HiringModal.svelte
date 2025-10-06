@@ -81,7 +81,7 @@
 								>
 								<td class="py-2 px-2 text-center">
 									<span
-										class="bg-success/80 text-textPrimary text-xs font-medium px-2 py-1 rounded-full"
+										class="bg-success/80 text-white text-xs font-medium px-2 py-1 rounded-full"
 									>
 										{employee.experience}xp
 									</span>
@@ -94,7 +94,7 @@
 								>
 								<td class="py-2 px-2 text-center">
 									<button
-										class="btn btn-xs bg-special hover:bg-special/80 text-textPrimary border-special/50"
+										class="btn btn-xs bg-special hover:bg-special/80 text-white border-special/50"
 									>
 										Hire
 									</button>
@@ -157,7 +157,7 @@
 								>
 								<td class="py-2 px-2 text-center">
 									<span
-										class="bg-success/80 text-textPrimary text-xs font-medium px-2 py-1 rounded-full"
+										class="bg-success/80 text-white text-xs font-medium px-2 py-1 rounded-full"
 									>
 										{manager.experience}xp
 									</span>
@@ -170,7 +170,7 @@
 								>
 								<td class="py-2 px-2 text-center">
 									<button
-										class="btn btn-xs bg-special hover:bg-special/80 text-textPrimary border-special/50"
+										class="btn btn-xs bg-special hover:bg-special/80 text-white border-special/50"
 									>
 										Hire
 									</button>
@@ -193,7 +193,7 @@
 			</div>
 			<div class="flex gap-3">
 				<button
-					class="btn btn-secondary bg-interactive/80 hover:bg-interactive text-textPrimary border-interactive/50"
+					class="btn btn-secondary bg-interactive/80 hover:bg-interactive text-white border-interactive/50"
 					on:click={() => {
 						if ($databaseStore.cash < 1000) {
 							alert('You do not have enough money');
@@ -206,7 +206,7 @@
 					🔄 Find new Managers ($1000)
 				</button>
 				<button
-					class="btn btn-secondary bg-interactive/80 hover:bg-interactive text-textPrimary border-interactive/50"
+					class="btn btn-secondary bg-interactive/80 hover:bg-interactive text-white border-interactive/50"
 					on:click={() => {
 						if ($databaseStore.cash < 500) {
 							alert('You do not have enough money');

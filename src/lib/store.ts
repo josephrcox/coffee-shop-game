@@ -456,8 +456,11 @@ export const DEFAULT_DB: db = {
 		popularityYesterday: 50,
 		popularityChange: 0,
 		ordersChange: 0,
+		history: [],
 	},
 	startingCash: 0,
+	availableEmployees: [],
+	availableManagers: [],
 };
 
 // Migration function to fix old saves
@@ -554,12 +557,11 @@ if (import.meta.hot) {
 
 export const showEndOfDay = writable<boolean>(false);
 const initialTutorial = getStore(tutorial);
-export const paused = writable<boolean>(
-	initialTutorial.active && (initialTutorial.step ?? 0) < 5 ? true : false,
-);
+export const paused = writable<boolean>(false);
 export const currentTip = writable<string>('');
 export const endOfDayMessages = writable<string[]>([]);
 export const showQuestConfetti = writable<boolean>(false);
+export const isInMenu = writable<boolean>(false);
 
 // Game speed setting (in milliseconds)
 export const gameSpeed = writable<number>(200);
@@ -634,35 +636,6 @@ export const currentView = writable<'orders' | 'cafe'>('orders');
 let tutorialPauseUnsubscribe: (() => void) | null = null;
 let pausedEnforceUnsubscribe: (() => void) | null = null;
 
-function setupTutorialPauseSubscription() {
-	if (tutorialPauseUnsubscribe) {
-		tutorialPauseUnsubscribe();
-	}
-	// When tutorial is active, force paused = true; when inactive, default to false
-	tutorialPauseUnsubscribe = tutorial.subscribe((t) => {
-		// Keep paused only for early steps (< 5). From step 5 onwards, auto-unpause.
-		const shouldPause = t.active && (t.step ?? 0) < 5;
-		paused.set(shouldPause);
-	});
-}
-
-setupTutorialPauseSubscription();
-
-function setupPausedEnforceSubscription() {
-	if (pausedEnforceUnsubscribe) {
-		pausedEnforceUnsubscribe();
-	}
-	pausedEnforceUnsubscribe = paused.subscribe((isPaused) => {
-		// If tutorial is active and still in early steps, ensure paused stays true
-		const t = getStore(tutorial);
-		if (t.active && (t.step ?? 0) < 5 && !isPaused) {
-			paused.set(true);
-		}
-	});
-}
-
-setupPausedEnforceSubscription();
-
 // Persist UI modal states
 let uiUnsubscribes: Array<() => void> = [];
 
@@ -712,8 +685,6 @@ if (import.meta.hot) {
 	});
 
 	import.meta.hot.accept(() => {
-		setupTutorialPauseSubscription();
-		setupPausedEnforceSubscription();
 		setupUiStateSubscriptions();
 	});
 }

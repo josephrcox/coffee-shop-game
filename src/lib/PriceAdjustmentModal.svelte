@@ -68,7 +68,7 @@
 	>
 		<!-- Header -->
 		<div class="flex items-center justify-between mb-6 flex-shrink-0">
-			<h3 class="text-2xl font-bold text-accent flex items-center gap-2">
+			<h3 class="text-2xl font-bold text-subheading flex items-center gap-2">
 				💰 Adjust Price
 			</h3>
 			<button
@@ -83,7 +83,7 @@
 			<!-- Content -->
 			<div class="flex flex-col gap-4">
 				<div class="flex flex-col gap-2">
-					<h4 class="text-lg font-semibold text-accent">
+					<h4 class="text-lg font-semibold text-subheading">
 						{$selectedMenuItem.name}
 					</h4>
 					<div class="text-sm text-textSecondary">
@@ -128,7 +128,7 @@
 					Cancel
 				</button>
 				<button
-					class="btn bg-success/80 text-textPrimary hover:bg-success border-none"
+					class="btn bg-success/80 text-white hover:bg-success border-none"
 					on:click={handleSave}
 					disabled={newPrice < 0.1}
 				>

@@ -307,12 +307,12 @@
 {#if $tutorial.active}
 	<div class="fixed inset-0 z-[1000] pointer-events-none">
 		<!-- Dimmer -->
-		<div class="absolute inset-0 bg-black/40"></div>
+		<div class="absolute inset-0 bg-textPrimary/40"></div>
 
 		{#if rect && !showWelcome}
 			<!-- Highlight box -->
 			<div
-				class="absolute border-2 border-accent rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] pointer-events-none"
+				class="absolute border-2 border-accent rounded-lg shadow-[0_0_0_9999px_rgba(30,41,59,0.4)] pointer-events-none"
 				style="left: {highlightLeft}px; top: {highlightTop}px; width: {highlightWidth}px; height: {highlightHeight}px;"
 			/>
 		{/if}
@@ -331,7 +331,7 @@
 					{#if TUTORIAL_STEPS.find((s) => s.id === $tutorial.step)?.manual}
 						<div class="text-right">
 							<button
-								class="btn btn-xs bg-info/80 text-textPrimary hover:bg-info border-info/50"
+								class="btn btn-xs bg-info/80 text-white hover:bg-info border-info/50"
 								on:click={() => {
 									if ($tutorial.step === 8) {
 										closeAllModals(true);
@@ -383,8 +383,8 @@
 
 						<button
 							class="btn {playerNameInput.trim()
-								? 'btn hover:bg-interactive border-interactive/50 bg-interactive/80 text-white'
-								: 'opacity-25 cursor-not-allowed '}  text-gray-800 disabled:cursor-not-allowed"
+								? 'btn hover:bg-interactive border-interactive/50 bg-interactive/80 text-textPrimary'
+								: 'opacity-25 cursor-not-allowed '}  text-textPrimary disabled:cursor-not-allowed"
 							on:click={startTutorial}
 						>
 							Start
@@ -403,7 +403,7 @@
 				>
 					<div class="text-2xl mb-3">{TUTORIAL_FINAL_TITLE}</div>
 					<button
-						class="btn bg-success/80 text-textPrimary hover:bg-success border-success/50"
+						class="btn bg-success/80 text-white hover:bg-success border-success/50"
 						on:click={() =>
 							tutorial.set({ active: false, step: 11, completed: true })}
 					>

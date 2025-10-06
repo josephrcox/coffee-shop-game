@@ -164,7 +164,9 @@
 			<div class="space-y-4">
 				<div class="flex items-center gap-3">
 					<div class="text-2xl">🍽️</div>
-					<h2 class="text-xl font-bold text-accent">Menu Item Proficiency</h2>
+					<h2 class="text-xl font-bold text-subheading">
+						Menu Item Proficiency
+					</h2>
 				</div>
 
 				{#if $selectedEmployee.menuItemProficiency && Object.keys($selectedEmployee.menuItemProficiency).length > 0}
@@ -265,7 +267,7 @@
 				💡 Tip: Higher proficiency means faster order completion!
 			</div>
 			<button
-				class="btn bg-error/80 hover:bg-error text-textPrimary border-error/50 gap-2 px-4 py-2"
+				class="btn bg-error/80 hover:bg-error text-white border-error/50 gap-2 px-4 py-2"
 				on:click={fireEmployee}
 			>
 				<svg

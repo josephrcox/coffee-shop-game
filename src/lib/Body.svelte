@@ -40,7 +40,7 @@
 		<button
 			class="text-[64px] font-semibold transition-colors duration-200 {$currentView ===
 			'orders'
-				? 'text-accent'
+				? 'text-subheading'
 				: 'text-textSecondary/50 hover:text-textSecondary'}"
 			on:click={() => currentView.set('orders')}
 		>
@@ -49,7 +49,7 @@
 		<button
 			class="text-[64px] font-semibold transition-colors duration-200 {$currentView ===
 			'cafe'
-				? 'text-accent'
+				? 'text-subheading'
 				: 'text-textSecondary/50 hover:text-textSecondary'}"
 			on:click={() => currentView.set('cafe')}
 		>
@@ -68,7 +68,7 @@
 					out:slide={{ duration: 300, easing: quintOut, axis: 'y' }}
 					class="bg-error border border-warning/60 rounded-lg p-2 z-20 backdrop-blur-sm w-fit mt-2 mb-4 fixed bottom-4 left-4"
 				>
-					<p class="text-sm text-white">
+					<p class="text-sm text-textPrimary">
 						{$currentTip}
 					</p>
 				</div>
@@ -100,7 +100,7 @@
 					{#if $databaseStore.staff.find((employee) => employee.currentOrder === order.id)?.name}
 						<span
 							in:fade={{ duration: 300, delay: 100 }}
-							class="text-sm bg-success/70 text-textPrimary px-2 ml-2 rounded-md transition-all duration-200"
+							class="text-sm bg-success/70 text-white px-2 ml-2 rounded-md transition-all duration-200"
 						>
 							{$databaseStore.staff.find(
 								(employee) => employee.currentOrder === order.id,
@@ -118,7 +118,7 @@
 			{/each}
 
 			{#if $databaseStore.orders.filter((order) => order.items && order.items.length > 0).length > 10}
-				<div class="text-sm text-gray-500 mt-2 text-center">
+				<div class="text-sm text-textSecondary mt-2 text-center">
 					{$databaseStore.orders.filter(
 						(order) => order.items && order.items.length > 0,
 					).length - 10} more orders...
@@ -141,7 +141,7 @@
 								<div
 									class="flex flex-row items-center justify-between gap-2 mb-3"
 								>
-									<span class="text-lg font-semibold text-accent"
+									<span class="text-lg font-semibold text-subheading"
 										>{setting.name}</span
 									>
 									<div class="flex gap-2">
@@ -179,7 +179,7 @@
 												: 'Max level reached'}
 										>
 											<button
-												class={`btn btn-xs ${next && (next.cost === 0 || affordable) ? 'bg-success/70 hover:bg-success text-textPrimary border-success/50' : 'bg-borderColor/30 text-error border-borderColor/40 cursor-not-allowed hover:bg-borderColor/30'}`}
+												class={`btn btn-xs ${next && (next.cost === 0 || affordable) ? 'bg-success/70 hover:bg-success text-white border-success/50' : 'bg-borderColor/30 text-error border-borderColor/40 cursor-not-allowed hover:bg-borderColor/30'}`}
 												on:click={() => {
 													if (next && (next.cost === 0 || affordable)) {
 														$databaseStore.cash -= next.cost;
@@ -236,7 +236,7 @@
 	<div
 		class="modal-box bg-cardBackground/95 text-textPrimary border-2 border-info/60 backdrop-blur-md"
 	>
-		<h3 class="text-lg text-accent font-semibold">New day!</h3>
+		<h3 class="text-lg text-subheading font-semibold">New day!</h3>
 		<div class="space-y-2">
 			<p class="text-textPrimary">
 				You made {Math.floor($databaseStore.stats.profitYesterday) > 0
@@ -288,7 +288,7 @@
 		<div class="modal-action">
 			<form method="dialog">
 				<button
-					class="btn bg-info/80 text-textPrimary hover:bg-info border-info/50"
+					class="btn bg-info/80 text-white hover:bg-info border-info/50"
 					on:click={() => {
 						showEndOfDay.set(false);
 						endOfDayMessages.set([]);

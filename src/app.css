@@ -1,8 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Jersey+10&family=Tiny5&family=Walter+Turncoat&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Apply Tiny5 font to the entire app with larger base size */
+html,
+body,
+#app,
+#app * {
+	font-family: 'Walter Turncoat', cursive;
+}
 
 /* Custom cursor */
 .custom-cursor {
@@ -20,6 +27,12 @@
 	transition: opacity 0.15s ease-out; /* Much faster transition */
 	transition: transform 0.15s ease-out; /* Much faster transition */
 	will-change: transform; /* Optimize for animations */
+}
+
+.btn:hover {
+	duration: 200ms;
+	transition: transform 200ms ease-out;
+	transform: rotate(2deg) scale(0.95);
 }
 
 /* Cursor pointer state - smaller size */
@@ -40,14 +53,18 @@ body.custom-cursor-active * {
 }
 
 .tooltip::before {
-	max-width: 200px;
-	background: #fff;
-	color: #000;
-	padding: 3px;
-	border-radius: 5px;
-	font-size: 16px;
-	text-align: center;
+	background: black;
+	color: theme('colors.textPrimary');
+	padding: 12px;
+	font-size: 1.75vh;
+	line-height: 1;
+	text-align: left;
 	z-index: 1000;
+	transition: all 0.2s ease-in-out;
+}
+
+.tooltip-content {
+	transition: all 0.2s ease-in-out;
 }
 
 /* select none */
@@ -66,7 +83,8 @@ body.custom-cursor-active * {
 /* Custom scrollbar for Webkit browsers */
 * {
 	scrollbar-width: thin;
-	scrollbar-color: #4b5563 #1a1a1a;
+	scrollbar-color: theme('colors.buttonSecondary')
+		theme('colors.cardBackground');
 }
 
 *::-webkit-scrollbar {
@@ -75,37 +93,37 @@ body.custom-cursor-active * {
 }
 
 *::-webkit-scrollbar-track {
-	background-color: #0f0f0f; /* mainBackground - warm dark cozy background */
-	color: #ffffff; /* textPrimary - warm light text */
+	background-color: theme('colors.mainBackground');
+	color: theme('colors.textPrimary');
 }
 
 *::-webkit-scrollbar-thumb {
-	background-color: #4b5563; /* buttonSecondary */
+	background-color: theme('colors.buttonSecondary');
 	border-radius: 3px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-	background-color: #6b7280;
+	background-color: theme('colors.textSecondary');
 }
 
 dialog::backdrop {
-	background-color: rgba(15, 15, 15, 0.8); /* mainBackground with opacity */
+	background-color: rgba(30, 41, 59, 0.8); /* textPrimary with opacity */
 }
 
 .modal-backdrop {
-	background-color: rgba(15, 15, 15, 0.8); /* mainBackground with opacity */
+	background-color: rgba(30, 41, 59, 0.8); /* textPrimary with opacity */
 }
 
 /* DaisyUI modal override */
 .modal:not(dialog:not(.modal-open)),
 .modal:not(dialog:not(.modal-open)) .modal-box {
-	border: 0px solid #374151; /* borderColor - themed border */
+	border: 0px solid theme('colors.borderColor');
 }
 
 input[type='color'] {
 	border-radius: 0px;
 	padding: 0;
-	border: 0px solid #a67c52; /* latte - coffee themed border */
+	border: 0px solid theme('colors.accent');
 	border-radius: 6px;
 }
 
@@ -128,4 +146,28 @@ input[type='color']::-webkit-color-swatch {
 	-webkit-line-clamp: 2;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
+}
+
+.btn {
+	margin: 0;
+}
+
+.btn-xs {
+	font-size: 0.875vw;
+}
+
+.btn-sm {
+	font-size: 1vw;
+}
+
+.btn-md {
+	font-size: 1.125vw;
+}
+
+.btn-lg {
+	font-size: 1.25vw;
+}
+
+.btn-xl {
+	font-size: 1.5vw;
 }

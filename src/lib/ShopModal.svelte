@@ -42,7 +42,7 @@
 		<div>
 			<div class="flex items-center gap-2 mb-3">
 				<div class="text-lg">🧂</div>
-				<h2 class="text-lg font-bold text-accent">Ingredients</h2>
+				<h2 class="text-lg font-bold text-subheading">Ingredients</h2>
 			</div>
 			<div class="overflow-x-auto">
 				<table class="w-full text-sm">
@@ -97,7 +97,7 @@
 								<td class="py-2 px-2 text-center">
 									{#if currentQuantity > 0}
 										<span
-											class="bg-accent/20 text-accent px-2 py-1 rounded text-xs"
+											class="bg-accent/20 text-textPrimary px-2 py-1 rounded text-xs"
 											>📦 {currentQuantity}</span
 										>
 									{:else}
@@ -122,7 +122,7 @@
 										<div class="text-warning text-xs">⚠️ {requires.name}</div>
 									{:else if canPurchase}
 										<button
-											class="btn btn-xs bg-special hover:bg-special/80 text-textPrimary border-special/50 px-3 py-1"
+											class="btn btn-xs bg-special hover:bg-special/80 text-white border-special/50 px-3 py-1"
 											on:click={() => {
 												const success = purchaseItem(
 													item.name,
@@ -150,7 +150,7 @@
 		<div>
 			<div class="flex items-center gap-2 mb-3">
 				<div class="text-lg">🔧</div>
-				<h2 class="text-lg font-bold text-accent">Equipment</h2>
+				<h2 class="text-lg font-bold text-subheading">Equipment</h2>
 			</div>
 			<div class="overflow-x-auto">
 				<table class="w-full text-sm">
@@ -205,7 +205,7 @@
 									{#if !ownedItem}
 										{#if canAfford}
 											<button
-												class="btn btn-xs bg-special hover:bg-special/80 text-textPrimary border-special/50 px-3 py-1"
+												class="btn btn-xs bg-special hover:bg-special/80 text-white border-special/50 px-3 py-1"
 												on:click={() => {
 													$databaseStore.cash -= item.cost;
 													$databaseStore.stats.expensesToday += item.cost;

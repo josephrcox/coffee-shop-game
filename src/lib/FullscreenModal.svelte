@@ -21,7 +21,7 @@
 						<div class="text-5xl">{icon}</div>
 					{/if}
 					<div>
-						<h1 class="text-3xl font-bold text-accent">{title}</h1>
+						<h1 class="text-3xl font-bold text-heading">{title}</h1>
 						{#if subtitle}
 							<p class="text-textSecondary">{subtitle}</p>
 						{/if}
@@ -31,7 +31,7 @@
 					<!-- Header extra content slot -->
 					<slot name="headerExtra" />
 					<button
-						class="btn bg-special hover:bg-special/80 text-textPrimary border-special/50 gap-2 text-lg px-6 py-3"
+						class="btn bg-special hover:bg-special/80 text-white border-special/50 gap-2 text-lg px-6 py-3"
 						on:click={() => {
 							$paused = false;
 							onClose();
