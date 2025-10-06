@@ -1,4 +1,4 @@
-import { writable, get as getStore } from 'svelte/store';
+import { writable, get as getStore, get } from 'svelte/store';
 import { tutorial } from './tutorial';
 import {
 	quests,
@@ -563,6 +563,19 @@ export const endOfDayMessages = writable<string[]>([]);
 export const showQuestConfetti = writable<boolean>(false);
 export const isInMenu = writable<boolean>(false);
 
+export enum View {
+	NEW_GAME = 'new',
+	DEFAULT = 'default',
+	MENU = 'menu',
+	SHOP = 'shop',
+	STAFF = 'STAFF',
+}
+export const currentView = writable<View>(
+	get(databaseStore).tick === 1000 && get(databaseStore).staff.length === 0
+		? View.NEW_GAME
+		: View.DEFAULT,
+);
+
 // Game speed setting (in milliseconds)
 export const gameSpeed = writable<number>(200);
 
@@ -628,9 +641,6 @@ export const showPriceAdjustmentModal = writable<boolean>(
 // Modal data stores
 export const selectedEmployee = writable<employee | null>(null);
 export const selectedMenuItem = writable<menuItem | null>(null);
-
-// Main view tab for Body.svelte (orders | cafe)
-export const currentView = writable<'orders' | 'cafe'>('orders');
 
 // Keep the game paused while the tutorial is active; unpause when it finishes
 let tutorialPauseUnsubscribe: (() => void) | null = null;

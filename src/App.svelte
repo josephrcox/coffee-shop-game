@@ -1,6 +1,4 @@
 <script lang="ts">
-	import Body from './lib/Body.svelte';
-	import Header from './lib/Header.svelte';
 	import DeveloperModal from './lib/DeveloperModal.svelte';
 	import Chalkboard from './lib/Chalkboard.svelte';
 	import StatsSection from './lib/StatsSection.svelte';
@@ -22,15 +20,11 @@
 		selectedMenuItem,
 		isInMenu,
 	} from './lib/store';
-	import { hasManager, calculateNetProfitToday } from './lib/utils';
 	import {
 		Equipment,
 		purchasableEquipment,
-		Trait,
 		type menuItem,
 	} from './lib/objects/types';
-	import Pill from './lib/Pill.svelte';
-	import TutorialOverlay from './lib/TutorialOverlay.svelte';
 
 	function handlePriceAdjustment(item: menuItem) {
 		$selectedMenuItem = item;
@@ -46,9 +40,6 @@
 
 	// Initialize background music when component mounts
 	import { onMount } from 'svelte';
-	import { confetti } from '@neoconfetti/svelte';
-	import ShopModal from './lib/ShopModal.svelte';
-	import MenuManagement from './lib/MenuManagement.svelte';
 	import { start } from './lib/loop';
 	onMount(() => {
 		initializeBackgroundMusic();
@@ -143,8 +134,6 @@
 </script>
 
 <DeveloperModal />
-<ShopModal />
-<MenuManagement />
 <div
 	class="flex flex-row items-center text-textPrimary absolute w-screen h-screen overflow-hidden justify-center"
 >
@@ -196,13 +185,13 @@
 			/>
 			<!-- svelte-ignore a11y-no-static-element-interactions -->
 			<div
-				class="absolute top-[40.5%] right-[28%] w-[13%] z-50"
+				class="absolute top-[42%] right-[29%] w-[12%] z-50"
 				on:mouseenter={() => (hoveringOn = 'grinder')}
 				on:mouseleave={() => (hoveringOn = null)}
 			>
 				<img
 					src="/grinder.png"
-					class={hasGrinder ? 'opacity-100' : 'opacity-20 blur-sm'}
+					class="w-full {hasGrinder ? 'opacity-100' : 'opacity-20 blur-sm'}"
 					alt=""
 				/>
 				{#if hoveringOn === 'grinder' && !hasGrinder && !$isInMenu}
@@ -217,7 +206,7 @@
 					>
 						<span>Coffee Grinder</span>
 						<button
-							class="btn btn-xs {canAfford
+							class="btn btn-xs h-auto {canAfford
 								? 'btn-primary'
 								: 'btn-error cursor-not-allowed opacity-50'}"
 							on:click={() => {
@@ -251,7 +240,7 @@
 			</div>
 			<!-- svelte-ignore a11y-no-static-element-interactions -->
 			<div
-				class="absolute top-[40.5%] right-[39%] w-[11%] z-50"
+				class="absolute top-[41.5%] right-[39%] w-[11%] z-50"
 				on:mouseenter={() => (hoveringOn = 'espresso')}
 				on:mouseleave={() => (hoveringOn = null)}
 			>

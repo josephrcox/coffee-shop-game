@@ -5,6 +5,7 @@ export default {
 	theme: {
 		extend: {
 			colors: {
+				tooltipColor: '#000000',
 				// Main backgrounds - clean light theme
 				mainBackground: '#ffffff', // pure white background
 				cardBackground: '#2B2404', // very light gray for cards

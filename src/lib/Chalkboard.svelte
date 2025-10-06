@@ -5,6 +5,8 @@
 		showShopModal,
 		paused,
 		isInMenu,
+		currentView,
+		View,
 	} from './store';
 	import ListHeader from './ListHeader.svelte';
 	import {
@@ -22,34 +24,22 @@
 	} from './utils';
 	import IngredientCheck from './IngredientCheck.svelte';
 
-	enum View {
-		NEW_GAME = 'new',
-		DEFAULT = 'default',
-		MENU = 'menu',
-		SHOP = 'shop',
-		STAFF = 'STAFF',
-	}
-	let currentView =
-		$databaseStore.tick === 1000 && $databaseStore.staff.length === 0
-			? View.NEW_GAME
-			: View.DEFAULT;
-
 	let availableEmployees: employee[] = $databaseStore.availableEmployees;
 	let availableManagers: manager[] = $databaseStore.availableManagers;
 
 	function handleMenuClick() {
 		$isInMenu = true;
-		currentView = View.MENU;
+		$currentView = View.MENU;
 	}
 
 	function handleShopClick() {
 		$isInMenu = true;
-		currentView = View.SHOP;
+		$currentView = View.SHOP;
 	}
 
 	function handleStaffClick() {
 		$isInMenu = true;
-		currentView = View.STAFF;
+		$currentView = View.STAFF;
 	}
 
 	// Create a local copy of possibleMenuItems to avoid mutation from MenuManagement.svelte
@@ -57,7 +47,7 @@
 
 	// Transform data for List component
 	$: menuItems = $databaseStore.menu;
-	$: if (currentView === View.NEW_GAME) {
+	$: if ($currentView === View.NEW_GAME) {
 		$isInMenu = true;
 	}
 
@@ -77,7 +67,7 @@
 	document.addEventListener('keydown', (e) => {
 		if (e.key === 'Escape') {
 			$isInMenu = false;
-			currentView = View.DEFAULT;
+			$currentView = View.DEFAULT;
 		}
 	});
 </script>
@@ -85,7 +75,7 @@
 <div
 	class="flex flex-row items-start justify-start overflow-hidden w-full px-2 pt-1"
 >
-	{#if currentView === View.DEFAULT}
+	{#if $currentView === View.DEFAULT}
 		<div class="flex flex-row items-start justify-evenly w-full gap-4">
 			<div class="w-1/3 text-sm">
 				<ListHeader
@@ -185,7 +175,7 @@
 			</div>
 		</div>
 	{/if}
-	{#if currentView === View.MENU}
+	{#if $currentView === View.MENU}
 		<div class="flex flex-col items-start w-full overflow-hidden">
 			<ListHeader title="What we're servin'" />
 			<div class="grid lg:grid-cols-2 w-full gap-2 overflow-hidden text-lg">
@@ -198,7 +188,7 @@
 					)}
 					<div class="flex flex-row items-center justify-between pr-8">
 						<span class="text-textPrimary">{item.name}</span>
-						<div>
+						<div class="flex flex-row items-center gap-2">
 							<IngredientCheck {hasIngredients} {item} />
 							<button
 								class="btn lg:btn-xs btn-sm btn-primary"
@@ -229,7 +219,7 @@
 			</div>
 		</div>
 	{/if}
-	{#if currentView === View.SHOP}
+	{#if $currentView === View.SHOP}
 		<div class="flex flex-col items-start w-full overflow-hidden">
 			<ListHeader title="What we've got" />
 			<div
@@ -279,7 +269,7 @@
 			</div>
 		</div>
 	{/if}
-	{#if currentView === View.STAFF}
+	{#if $currentView === View.STAFF}
 		{@const cost = 100}
 		<div class="flex flex-col items-start justify-between w-full gap-8">
 			<div class="flex flex-col items-start w-full">
@@ -399,7 +389,7 @@
 			</div>
 		</div>
 	{/if}
-	{#if currentView === View.NEW_GAME}
+	{#if $currentView === View.NEW_GAME}
 		<div class="flex flex-col items-start w-full gap-2">
 			<div class="flex flex-row justify-between w-full">
 				<ListHeader title="The Grind" />
@@ -407,7 +397,7 @@
 					class="btn btn-primary mt-4 btn-sm inset-x-0 mx-auto"
 					on:click={() => {
 						$isInMenu = false;
-						currentView = View.DEFAULT;
+						$currentView = View.DEFAULT;
 						$paused = false;
 						if ($databaseStore.staff.length === 0) {
 							$databaseStore = startGame($databaseStore);
@@ -432,14 +422,14 @@
 			</p>
 		</div>
 	{/if}
-	{#if currentView !== View.DEFAULT && currentView !== View.NEW_GAME}
+	{#if $currentView !== View.DEFAULT && $currentView !== View.NEW_GAME}
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<!-- svelte-ignore a11y-no-static-element-interactions -->
 		<div
 			class="flex flex-row items-center gap-2 cursor-pointer"
 			on:click={() => {
 				$isInMenu = false;
-				currentView = View.DEFAULT;
+				$currentView = View.DEFAULT;
 			}}
 		>
 			<span class="text-textPrimary"> Back </span>

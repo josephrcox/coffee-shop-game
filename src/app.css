@@ -82,14 +82,12 @@ body.custom-cursor-active * {
 
 /* Custom scrollbar for Webkit browsers */
 * {
-	scrollbar-width: thin;
-	scrollbar-color: theme('colors.buttonSecondary')
-		theme('colors.cardBackground');
+	scrollbar-width: none;
 }
 
 *::-webkit-scrollbar {
-	width: 6px;
-	height: 6px;
+	width: 0px;
+	height: 0px;
 }
 
 *::-webkit-scrollbar-track {
@@ -99,7 +97,7 @@ body.custom-cursor-active * {
 
 *::-webkit-scrollbar-thumb {
 	background-color: theme('colors.buttonSecondary');
-	border-radius: 3px;
+	border-radius: 0px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
