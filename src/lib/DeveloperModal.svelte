@@ -111,7 +111,7 @@
 		>
 			<!-- button to clear local storage and refresh the page -->
 			<button
-				class="btn bg-error/80 hover:bg-error text-textPrimary border-error/50"
+				class="btn bg-error/80 hover:bg-error text-white border-error/50"
 				on:click={() => {
 					localStorage.clear();
 					location.reload();
@@ -120,14 +120,14 @@
 				🗑️ Clear Local Storage
 			</button>
 			<button
-				class="btn bg-error/80 hover:bg-error text-textPrimary border-error/50"
+				class="btn bg-error/80 hover:bg-error text-white border-error/50"
 				on:click={resetGame}
 			>
 				🗑️ Reset Game
 			</button>
 
 			<button
-				class="btn bg-success/80 hover:bg-success text-textPrimary border-success/50"
+				class="btn bg-success/80 hover:bg-success text-white border-success/50"
 				on:click={saveChanges}
 				disabled={parseError !== ''}
 			>
@@ -135,7 +135,7 @@
 			</button>
 
 			<button
-				class="btn bg-interactive/80 hover:bg-interactive text-textPrimary border-interactive/50"
+				class="btn bg-interactive/80 hover:bg-interactive text-white border-interactive/50"
 				on:click={closeModal}
 			>
 				❌ Close

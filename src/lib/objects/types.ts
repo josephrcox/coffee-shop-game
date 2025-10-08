@@ -2,7 +2,7 @@
 export enum Ingredient {
 	COFFEE_GROUNDS = '☕️ Coffee Grounds',
 	COFFEE_BEANS = '☕️ Coffee Beans',
-	MILK_COW = '🥛 Milk (cow)',
+	MILK_COW = '🥛 Milk',
 	BLACK_TEA = '🍵 Black Tea',
 	GREEN_TEA = '🍵 Green Tea',
 	CHAI_TEA = '🍵 Chai Tea',
@@ -12,7 +12,6 @@ export enum Equipment {
 	DRIP_COFFEE_MACHINE = '☕️ Drip coffee machine',
 	COFFEE_GRINDER = '☕️ Coffee grinder',
 	ESPRESSO_MACHINE = '☕️ Espresso machine',
-	MILK_FROTHER = '🥛 Milk frother',
 	ICE_MACHINE = '🧊 Ice machine',
 }
 
@@ -45,6 +44,16 @@ export type cafeSettingLevel = {
 	vibeEffect: number; // Additive change to db.vibe when purchased
 };
 
+// Historical daily snapshot for analytics and charts
+export type dailyStatSnapshot = {
+	day: number; // day index = Math.floor(tick / 1000)
+	cash: number; // end-of-day cash after wages/costs
+	popularity: number; // end-of-day popularity
+	demand: number; // end-of-day total demand (from current menu)
+	orders: number; // orders completed during the day
+	profit: number; // net profit for the day
+};
+
 export type db = {
 	tick: number; // 1000 ticks = 1 day
 	cafeSettings: cafeSetting[];
@@ -69,9 +78,12 @@ export type db = {
 		popularityYesterday: number; // Track yesterday's popularity
 		popularityChange: number; // Change in popularity from yesterday
 		ordersChange: number; // Change in total orders from yesterday
+		history: dailyStatSnapshot[]; // Append one entry per day at rollover
 	};
 	startingCash: number; // Cash at start of current day
 	quests: quest[];
+	availableEmployees: employee[];
+	availableManagers: manager[];
 };
 
 export type manager = {
@@ -348,6 +360,7 @@ export const quests: quest[] = [
 ];
 
 export type employee = {
+	id: number;
 	name: string;
 	dailyWage: number; // daily
 	experience: number; // higher = faster. 0 = complete newbie, 1000 = expert
@@ -478,11 +491,7 @@ export const possibleMenuItems: menuItem[] = [
 		price: 5,
 		complexity: 4,
 		demand: 120,
-		requires: [
-			Equipment.ESPRESSO_MACHINE,
-			Equipment.COFFEE_GRINDER,
-			Equipment.MILK_FROTHER,
-		],
+		requires: [Equipment.ESPRESSO_MACHINE, Equipment.COFFEE_GRINDER],
 		marketPrice: 5,
 	},
 	{
@@ -494,11 +503,7 @@ export const possibleMenuItems: menuItem[] = [
 		price: 5,
 		complexity: 5,
 		demand: 110,
-		requires: [
-			Equipment.ESPRESSO_MACHINE,
-			Equipment.COFFEE_GRINDER,
-			Equipment.MILK_FROTHER,
-		],
+		requires: [Equipment.ESPRESSO_MACHINE, Equipment.COFFEE_GRINDER],
 		marketPrice: 5,
 	},
 	{
@@ -562,7 +567,6 @@ export const possibleMenuItems: menuItem[] = [
 			Equipment.ICE_MACHINE,
 			Equipment.ESPRESSO_MACHINE,
 			Equipment.COFFEE_GRINDER,
-			Equipment.MILK_FROTHER,
 		],
 		marketPrice: 6,
 	},
@@ -579,7 +583,6 @@ export const possibleMenuItems: menuItem[] = [
 			Equipment.ICE_MACHINE,
 			Equipment.ESPRESSO_MACHINE,
 			Equipment.COFFEE_GRINDER,
-			Equipment.MILK_FROTHER,
 		],
 		marketPrice: 6,
 	},
@@ -609,6 +612,7 @@ export const purchasableItems: purchasableItem[] = [
 		name: Ingredient.COFFEE_BEANS,
 		description: 'For espresso drinks, needs to be ground first',
 		quantity: 100,
+		requires: [Equipment.COFFEE_GRINDER],
 		cost: 100,
 	},
 	{
@@ -623,14 +627,12 @@ export const purchasableItems: purchasableItem[] = [
 		description: '',
 		quantity: 150,
 		cost: 10,
-		requires: [Ingredient.BLACK_TEA],
 	},
 	{
 		name: Ingredient.GREEN_TEA,
 		description: '',
 		quantity: 150,
 		cost: 10,
-		requires: [Ingredient.GREEN_TEA],
 	},
 	{
 		name: Ingredient.CHAI_TEA,
@@ -659,7 +661,7 @@ export const purchasableEquipment: purchasableEquipment[] = [
 	},
 	{
 		name: Equipment.COFFEE_GRINDER,
-		cost: 200,
+		cost: 1500,
 		quality: 100,
 		durability: 0.2,
 		failureChance: 0.0001,
@@ -674,7 +676,7 @@ export const purchasableEquipment: purchasableEquipment[] = [
 	},
 	{
 		name: Equipment.ESPRESSO_MACHINE,
-		cost: 1500,
+		cost: 3000,
 		quality: 100,
 		durability: 0.2,
 		failureChance: 0.01,
@@ -687,14 +689,6 @@ export const purchasableEquipment: purchasableEquipment[] = [
 				description: 'Temperature regulator. 25% lower chance of failure.',
 			},
 		],
-	},
-	{
-		name: Equipment.MILK_FROTHER,
-		cost: 100,
-		quality: 100,
-		durability: 0.2,
-		failureChance: 0.000001,
-		upgrades: [],
 	},
 	{
 		name: Equipment.ICE_MACHINE,

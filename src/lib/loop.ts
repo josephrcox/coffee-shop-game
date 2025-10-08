@@ -24,8 +24,9 @@ let intervalId: NodeJS.Timeout | null = null;
 let musicInitialized = false;
 
 export function gameLoop() {
-	if (get(showEndOfDay)) return;
+	let db = get(databaseStore);
 	if (get(paused)) return;
+	if (db.tick % 1000 === 0) return;
 
 	// Initialize background music on first game tick
 	if (!musicInitialized) {
@@ -35,16 +36,10 @@ export function gameLoop() {
 		});
 	}
 
-	let db = get(databaseStore);
+	console.log('db.tick', db.tick);
 	db.tick += 1;
 
 	checkNux(db.tick);
-
-	if (db.staff.length === 0) {
-		db = startGame(db);
-		databaseStore.set(db);
-		return;
-	}
 
 	// Update total demand from current menu
 	db.totalDemand = calculateTotalDemand(db.menu);
@@ -191,6 +186,26 @@ export function gameLoop() {
 		// Pay staff wages and cafe daily costs
 		db.cash -= totalWages;
 		db.cash -= dailyCafeCosts;
+
+		// Record end-of-day snapshot for historical analytics before resetting daily counters
+		try {
+			if (!Array.isArray(db.stats.history)) {
+				db.stats.history = [];
+			}
+			const dayIndex = Math.floor(db.tick / 1000);
+			db.stats.history.push({
+				day: dayIndex,
+				cash: Math.round(db.cash),
+				popularity: Math.round(db.popularity),
+				demand: Math.round(db.totalDemand),
+				orders: db.stats.ordersToday,
+				profit: Math.round(db.stats.profitYesterday),
+			});
+			// Optional: keep history bounded (e.g., last 365 days)
+			if (db.stats.history.length > 365) {
+				db.stats.history = db.stats.history.slice(-365);
+			}
+		} catch {}
 
 		// Reset for new day
 		db.orders = [];

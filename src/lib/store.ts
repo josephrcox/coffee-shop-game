@@ -1,4 +1,4 @@
-import { writable, get as getStore } from 'svelte/store';
+import { writable, get as getStore, get } from 'svelte/store';
 import { tutorial } from './tutorial';
 import {
 	quests,
@@ -456,8 +456,11 @@ export const DEFAULT_DB: db = {
 		popularityYesterday: 50,
 		popularityChange: 0,
 		ordersChange: 0,
+		history: [],
 	},
 	startingCash: 0,
+	availableEmployees: [],
+	availableManagers: [],
 };
 
 // Migration function to fix old saves
@@ -554,12 +557,24 @@ if (import.meta.hot) {
 
 export const showEndOfDay = writable<boolean>(false);
 const initialTutorial = getStore(tutorial);
-export const paused = writable<boolean>(
-	initialTutorial.active && (initialTutorial.step ?? 0) < 5 ? true : false,
-);
+export const paused = writable<boolean>(false);
 export const currentTip = writable<string>('');
 export const endOfDayMessages = writable<string[]>([]);
 export const showQuestConfetti = writable<boolean>(false);
+export const isInMenu = writable<boolean>(false);
+
+export enum View {
+	NEW_GAME = 'new',
+	DEFAULT = 'default',
+	MENU = 'menu',
+	SHOP = 'shop',
+	STAFF = 'STAFF',
+}
+export const currentView = writable<View>(
+	get(databaseStore).tick === 1000 && get(databaseStore).staff.length === 0
+		? View.NEW_GAME
+		: View.DEFAULT,
+);
 
 // Game speed setting (in milliseconds)
 export const gameSpeed = writable<number>(200);
@@ -627,41 +642,9 @@ export const showPriceAdjustmentModal = writable<boolean>(
 export const selectedEmployee = writable<employee | null>(null);
 export const selectedMenuItem = writable<menuItem | null>(null);
 
-// Main view tab for Body.svelte (orders | cafe)
-export const currentView = writable<'orders' | 'cafe'>('orders');
-
 // Keep the game paused while the tutorial is active; unpause when it finishes
 let tutorialPauseUnsubscribe: (() => void) | null = null;
 let pausedEnforceUnsubscribe: (() => void) | null = null;
-
-function setupTutorialPauseSubscription() {
-	if (tutorialPauseUnsubscribe) {
-		tutorialPauseUnsubscribe();
-	}
-	// When tutorial is active, force paused = true; when inactive, default to false
-	tutorialPauseUnsubscribe = tutorial.subscribe((t) => {
-		// Keep paused only for early steps (< 5). From step 5 onwards, auto-unpause.
-		const shouldPause = t.active && (t.step ?? 0) < 5;
-		paused.set(shouldPause);
-	});
-}
-
-setupTutorialPauseSubscription();
-
-function setupPausedEnforceSubscription() {
-	if (pausedEnforceUnsubscribe) {
-		pausedEnforceUnsubscribe();
-	}
-	pausedEnforceUnsubscribe = paused.subscribe((isPaused) => {
-		// If tutorial is active and still in early steps, ensure paused stays true
-		const t = getStore(tutorial);
-		if (t.active && (t.step ?? 0) < 5 && !isPaused) {
-			paused.set(true);
-		}
-	});
-}
-
-setupPausedEnforceSubscription();
 
 // Persist UI modal states
 let uiUnsubscribes: Array<() => void> = [];
@@ -712,8 +695,6 @@ if (import.meta.hot) {
 	});
 
 	import.meta.hot.accept(() => {
-		setupTutorialPauseSubscription();
-		setupPausedEnforceSubscription();
 		setupUiStateSubscriptions();
 	});
 }
